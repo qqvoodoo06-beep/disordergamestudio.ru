@@ -444,7 +444,7 @@ def project_page(project: dict, lang: str) -> str:
     others = [data.PROJECTS[(start + k) % len(order)] for k in range(1, 4)]
     about_title = t["about_app"] if project["kind"] == "app" else t["about_game"]
     body = f"""
-<main id="main" style="--accent:{project['accent']}">
+<main id="main" data-project="{slug}" style="--accent:{project['accent']}">
 <nav class="crumbs wrap" aria-label="{t['crumbs']}"><ol>
   <li><a href="{home}">{STUDIO['name']}</a></li><li><a href="{home}#projects">{t['projects']}</a></li>
   <li aria-current="page">{esc(text['short_title'])}</li></ol></nav>

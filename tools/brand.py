@@ -59,11 +59,13 @@ def disorder_paths(height: float, chaos: bool, pad: float) -> tuple[list[QPainte
     return paths, logotype.word_width("DISORDER", height) + pad * 2, height + pad * 2
 
 
-# --- логотип для шапки сайта: currentColor, чтобы цвет задавал CSS
+# --- логотип для шапки сайта: currentColor, чтобы цвет задавал CSS; каждая буква — отдельный path,
+# чтобы сайт мог двигать их по одной (буквы разбегаются от курсора)
 paths, w, h = disorder_paths(100, True, 8)
+letters = "".join(f'<path class="l" d="{path_d(p)}"/>' for p in paths)
 (ASSETS / "logo-disorder.svg").write_text(
     f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h:.0f}" role="img" aria-label="Disorder">'
-    f'<path fill="currentColor" d="{" ".join(path_d(p) for p in paths)}"/></svg>\n', encoding="utf-8")
+    f'<g fill="currentColor">{letters}</g></svg>\n', encoding="utf-8")
 
 # --- белый логотип с цветным «сбоем» (для картинок соцсетей), около 2500 px шириной
 S = 6
