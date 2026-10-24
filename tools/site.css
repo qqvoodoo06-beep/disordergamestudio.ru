@@ -324,8 +324,12 @@ a .tg-hidden { opacity: 0; transition: opacity .25s ease; }
 .reveal.in { opacity: 1; translate: 0 0; }
 
 /* Плашка достижения — как оверлей GameShelf */
+.ach-stack {  /* плашки стопкой: новая сверху */
+  position: fixed; right: 20px; bottom: 20px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end;
+  gap: 12px; pointer-events: none;
+}
 .ach-toast {
-  position: fixed; right: 20px; bottom: 20px; z-index: 200; display: flex; gap: 14px; align-items: center;
+  position: relative; display: flex; gap: 14px; align-items: center; pointer-events: auto;
   width: min(380px, calc(100vw - 40px)); padding: 14px 18px 14px 14px; border-radius: 16px;
   background: linear-gradient(135deg, #221a3a, #150f28) padding-box,
               linear-gradient(90deg, #fbbf24, #d946ef) border-box;
@@ -371,11 +375,12 @@ canvas.fx-layer { width: 100%; height: 100%; }
 .fx-retcon.go i { animation: retcon-seam 1.2s .5s cubic-bezier(.7, 0, .3, 1) forwards; }
 @keyframes retcon-seam { 0% { left: 0; opacity: 1; } 96% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
 .fx-retcon b {
-  position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); white-space: nowrap; opacity: 0;
+  position: absolute; left: 50%; top: 10%; transform: translateX(-50%); white-space: nowrap; opacity: 0;
   font: 800 12px/1 var(--font); letter-spacing: .26em; text-transform: uppercase; color: #ffd2b0;
   background: rgba(12, 6, 4, .78); padding: 9px 14px; border: 1px solid rgba(255, 140, 80, .65);
 }
-.fx-retcon.go b { animation: retcon-label .8s 1.7s steps(1) forwards; }
+.fx-retcon.go b { animation: retcon-label .8s 1.7s steps(1) forwards, retcon-label-out .3s 2.9s ease forwards; }
+@keyframes retcon-label-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes retcon-label { 0% { opacity: 1; } 15% { opacity: 0; } 30% { opacity: 1; } 45% { opacity: .25; } 60%, 100% { opacity: 1; } }
 
 /* Бог бюрократии: печать с размаху */
@@ -413,11 +418,11 @@ canvas.fx-layer { width: 100%; height: 100%; }
 @keyframes note-up {
   0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
   15% { opacity: 1; }
-  100% { opacity: 0; transform: translate(var(--sway), -150%) rotate(var(--rot)); }
+  100% { opacity: 0; transform: translate(var(--sway), var(--rise, -200px)) rotate(var(--rot)); }  /* --rise — от высоты карточки */
 }
 
 /* GameShelf: часы набегают, выскакивает плашка достижения */
-.fx-shelf .pill {
+.fx-shelf .hours {
   position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; align-items: center; padding: 6px 11px;
   border-radius: 999px; background: rgba(10, 8, 20, .85); border: 1px solid rgba(52, 211, 153, .6); color: #a7f3d0;
   font: 700 13px/1 var(--font); animation: fx-pop .3s ease both;
@@ -433,3 +438,12 @@ canvas.fx-layer { width: 100%; height: 100%; }
 .fx-shelf .ach strong { display: block; color: #fff; font: 700 13px/1.25 var(--font); }
 @keyframes fx-pop { from { opacity: 0; transform: scale(.6); } }
 @keyframes fx-slide { from { opacity: 0; transform: translateX(120%); } }
+
+/* Во время эффекта карточки — без увеличения картинки и блика (иначе в конце всё «прыгает») */
+.card.fx-busy .thumb img { transform: none !important; }
+.card.fx-busy::after, .spotlight.fx-busy::after { opacity: 0 !important; }
+/* Градиент, уводящий картинку главного проекта в фон карточки, остаётся поверх слоя эффекта */
+.spotlight .art::after { z-index: 4; }
+.fx-shelf .hours em { font-style: normal; font-variant-numeric: tabular-nums; }
+/* Логотип прокручен за экран — его «сбой» не пересчитывается впустую */
+.hero-logo svg.idle { animation-play-state: paused; }

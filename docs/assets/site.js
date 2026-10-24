@@ -9,6 +9,7 @@
     set: (key, value) => { try { localStorage.setItem(key, value); } catch { /* приватный режим */ } },
   };
   const rand = (items) => items[Math.floor(Math.random() * items.length)];
+  const unlocked = new Set();  // выданные в этот раз достижения — даже если localStorage заблокирован
 
   // ---------------------------------------------------------------- зацикленные ролики и «уменьшить движение»
   if (reduce) {
@@ -61,7 +62,8 @@
     }
   };
   const spawn = (x, y, count, spread, speed, life = 46, colors = COLORS) => {
-    if (!pixels.canvas) return;
+    if (reduce) return;
+    if (!pixels.canvas) setupPixels();  // на телефоне холст нужен только эффектам карточек — создаём по требованию
     for (let i = 0; i < count; i += 1) {
       if (pixels.list.length > 320) pixels.list.shift();
       const angle = Math.random() * Math.PI * 2;
@@ -92,7 +94,7 @@
         for (let i = 1; i <= steps; i += 1) {
           spawn(last.x + (x - last.x) * (i / steps), last.y + (y - last.y) * (i / steps), 2, 9, 0.8);
         }
-        if (travelled > 60000) unlock("pixel");
+        if (travelled > 60000 && !unlocked.has("pixel")) unlock("pixel");
       }
       last = { x, y };
     }, { passive: true });
@@ -141,6 +143,12 @@
       letters.forEach((l) => { l.tx = 0; l.ty = 0; l.tr = 0; });
       kick();
     });
+  }
+
+  // Логотип прокручен за экран — его постоянная анимация «сбоя» ставится на паузу
+  const hero = document.querySelector(".hero");
+  if (hero && heroLogo && "IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) => heroLogo.classList.toggle("idle", !entry.isIntersecting)).observe(hero);
   }
 
   // Буквы маленького логотипа в шапке дрожат, пока на нём курсор
@@ -297,7 +305,23 @@
     canvas.height = box.clientHeight * ratio;
     const ctx = canvas.getContext("2d");
     ctx.scale(ratio, ratio);
-    return { canvas, ctx, w: box.clientWidth, h: box.clientHeight };
+    return { canvas, ctx, w: box.clientWidth, h: box.clientHeight, ratio };
+  };
+  // Пока идёт эффект, у карточки не увеличивается картинка и не светится блик — иначе в конце всё «прыгает»
+  const busy = (card, ms) => { card.classList.add("fx-busy"); later(ms, () => card.classList.remove("fx-busy")); };
+  // Звук: только если человек уже что-то нажимал на сайте; между звуками аудио засыпает, чтобы не грузить процессор
+  let audioNap = null;
+  const sound = () => {
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      clearTimeout(audioNap);
+      audioNap = later(2500, () => audio.suspend());
+      return audio;
+    } catch {
+      return null;
+    }
   };
   const run = (duration, draw, done) => {  // кадры с t от 0 до duration (мс)
     const start = performance.now();
@@ -308,10 +332,9 @@
     };
     requestAnimationFrame(frame);
   };
-  const tone = (notes, gap = 0.11, volume = 0.05) => {  // короткая мелодия, только если человек уже что-то нажимал
-    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+  const tone = (notes, gap = 0.11, volume = 0.05) => {  // короткая мелодия
+    if (!sound()) return;
     try {
-      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       notes.forEach((freq, i) => {
         const osc = audio.createOscillator();
         const gain = audio.createGain();
@@ -331,10 +354,15 @@
   const FX = {
     // Реткон: горящий шов проходит по кадру — та же квартира, но показания уже другие
     hoits(box, card) {
+      // Кадры по размеру блока: большие только для широкого блока на экране с высокой плотностью
+      const big = box.clientWidth * (window.devicePixelRatio || 1) > 700 && card.dataset.fxA2;
+      const a = big ? card.dataset.fxA2 : card.dataset.fxA;
+      const b = big ? card.dataset.fxB2 : card.dataset.fxB;
       const layer = make("div", "fx-layer fx-retcon",
-        `<img src="${card.dataset.fxA}" alt=""><img class="after" src="${card.dataset.fxB}" alt=""><i></i>
+        `<img src="${a}" alt=""><img class="after" src="${b}" alt=""><i></i>
          <b>${ru ? "Показания изменены" : "Testimony changed"}</b>`);
       box.append(layer);
+      busy(card, 4100);
       Promise.all([...layer.querySelectorAll("img")].map((img) => img.decode().catch(() => {}))).then(() => {
         layer.classList.add("go");
         finish(layer, 3300);
@@ -356,7 +384,8 @@
       finish(stamp, 2400);
     },
     // Картина рассыпается на кусочки пазла и собирается обратно
-    "tidying-the-puzzle-gallery"(box) {
+    "tidying-the-puzzle-gallery"(box, card) {
+      busy(card, 2900);
       const img = box.querySelector("img");
       const w = box.clientWidth;
       const h = box.clientHeight;
@@ -381,14 +410,15 @@
         }
       }
       box.append(layer);
-      later(2200, () => layer.remove());
+      finish(layer, 2050);  // кусочки уже на местах — слой тихо гаснет, картинка под ним та же
     },
     // Сверху падают неоновые пентамино, собирают линию — она вспыхивает и исчезает
     pentomino(box) {
-      const { canvas, ctx, w, h } = canvasIn(box);
+      const { canvas, ctx, w, h, ratio } = canvasIn(box);
       const cols = 10;
       const cell = w / cols;
       const bottom = Math.floor(h / cell) - 1;
+      const shift = h - (bottom + 1) * cell;  // сетка прижата к низу карточки: линия ложится на дно, а не висит
       const pieces = [  // [столбец, строка от низа] клеток; вместе закрывают нижнюю линию целиком
         { color: "#22d3ee", cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]] },
         { color: "#d946ef", cells: [[5, 0], [6, 0], [7, 0], [8, 0], [5, 1]] },
@@ -402,7 +432,7 @@
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.shadowColor = color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 10 * ratio;  // размытие тени не масштабируется вместе с холстом
         ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
         ctx.strokeRect(x + 3, y + 3, cell - 6, cell - 6);
       };
@@ -422,7 +452,7 @@
             if (cleared && cy === 0) return;
             const row = bottom - cy + (cleared ? 1 : 0);
             const color = flash && cy === 0 ? "#ffffff" : piece.color;
-            square(cx * cell, row * cell - fall, color);
+            square(cx * cell, shift + row * cell - fall, color);
           });
         });
       }, () => finish(canvas, 0));
@@ -439,11 +469,12 @@
         note.style.setProperty("--d", `${Math.random() * 420}ms`);
         note.style.setProperty("--sway", `${(Math.random() - 0.5) * 60}px`);
         note.style.setProperty("--rot", `${(Math.random() - 0.5) * 50}deg`);
+        note.style.setProperty("--rise", `${-box.clientHeight * (0.75 + Math.random() * 0.4)}px`);  // от высоты карточки
         layer.append(note);
       }
       box.append(layer);
       tone([523.25, 659.25, 783.99, 1046.5]);
-      later(3200, () => layer.remove());
+      later(3000, () => layer.remove());
     },
     // Красные и синие пиксельные солдатики сходятся, и над полем поднимается красное знамя
     "uprising-lands-of-the-red"(box) {
@@ -451,17 +482,18 @@
       const p = Math.max(3, Math.round(w / 85));
       const ground = Math.round(h * 0.9);
       const meet = w / 2;
-      const soldier = (x, color, step, alpha, facing) => {
+      const soldier = (x, color, dark, step, alpha, facing) => {  // пиксельный копейщик со щитом
         ctx.globalAlpha = alpha;
-        const y = ground - 9 * p - (step % 2) * p * 0.5;
-        ctx.fillStyle = color;
-        ctx.fillRect(x - p, y, 2 * p, 2 * p);                  // шлем
-        ctx.fillRect(x - p, y + 2 * p, 2 * p, 4 * p);          // туловище
-        ctx.fillStyle = "#1f1630";
-        ctx.fillRect(x - p + (step % 2 ? 0 : p), y + 6 * p, p, 3 * p);  // ноги шагают
-        ctx.fillRect(x + (step % 2 ? 0 : -p), y + 6 * p, p, 3 * p);
-        ctx.fillStyle = "#d6d3e0";
-        ctx.fillRect(x + facing * 2 * p, y - 3 * p, Math.max(1, p / 2), 9 * p);  // копьё
+        const y = ground - 10 * p - (step % 2) * p * 0.5;
+        const px = (dx, dy, wd, ht, fill) => { ctx.fillStyle = fill; ctx.fillRect(x + dx * p, y + dy * p, wd * p, ht * p); };
+        px(-1, 0, 3, 1, "#cbd5e1");                           // шлем
+        px(-1, 1, 3, 2, "#f1c79e");                           // лицо
+        px(-1, 3, 3, 4, color);                               // туловище в цвете армии
+        px(facing > 0 ? 1 : -2, 3, 2, 3, dark);               // щит впереди
+        px(step % 2 ? -1 : 0, 7, 1, 3, "#e2e8f0");            // ноги шагают
+        px(step % 2 ? 1 : 0, 7, 1, 3, "#94a3b8");
+        px(facing > 0 ? 3 : -3, -3, 0.5, 10, "#e2e8f0");      // копьё
+        px(facing > 0 ? 2.75 : -3.25, -4, 1, 1, "#fde68a");   // наконечник
       };
       const sparks = [];
       run(3400, (t) => {
@@ -475,11 +507,12 @@
         const march = Math.min(1, t / 1300);
         const step = Math.floor(t / 140);
         for (let i = 0; i < 4; i += 1) {
-          const red = -30 - i * 7 * p + march * (meet - 10 - 8 * p);
-          const blue = w + 30 + i * 7 * p - march * (meet - 10 - 8 * p);
-          const fallen = t > 1500 ? Math.max(0, 1 - (t - 1500) / 500) : 1;
-          soldier(red, "#ef4444", step + i, 1, 1);
-          soldier(blue, "#3b82f6", step + i + 1, fallen, -1);
+          // Передние останавливаются вплотную: копья скрещиваются ровно посередине
+          const red = meet - 4 * p - i * 8 * p - (1 - march) * (meet + 40);
+          const blue = meet + 4 * p + i * 8 * p + (1 - march) * (meet + 40);
+          const fallen = t > 1450 ? Math.max(0, 1 - (t - 1450) / 450) : 1;
+          soldier(red, "#ef4444", "#991b1b", march < 1 ? step + i : 0, 1, 1);
+          soldier(blue + (1 - fallen) * 10 * p, "#3b82f6", "#1e3a8a", march < 1 ? step + i + 1 : 0, fallen, -1);
         }
         if (t > 1300 && t < 1360 && !sparks.length) {
           for (let i = 0; i < 26; i += 1) {
@@ -511,7 +544,7 @@
     // Часы на обложке набегают, и выскакивает плашка достижения — как в самой программе
     gameshelf(box) {
       const layer = make("div", "fx-layer fx-shelf",
-        `<span class="pill">🕒 <em>0</em></span>
+        `<span class="hours">🕒 <em>0</em></span>
          <div class="ach"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.5M16 6h3.5v1.5A3 3 0 0 1 16 10.5M12 13v4M8.5 20h7M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
          <div><small>${ru ? "Достижение получено" : "Achievement unlocked"}</small><strong>${ru ? "Заглянул в GameShelf" : "Peeked at GameShelf"}</strong></div></div>`);
       box.append(layer);
@@ -534,13 +567,19 @@
       } catch { /* без sessionStorage — хотя бы раз на этой странице */ }
       return true;
     };
+    // На телефоне — когда карточка уже проявилась и человек на ней задержался: не меньше 60% видно 0,9 с подряд.
+    // При быстрой прокрутке эффекты не «сгорают» за экраном
+    const timers = new Map();
     const watch = "IntersectionObserver" in window && !mouse
       ? new IntersectionObserver((entries) => entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          watch.unobserve(entry.target);
-          entry.target.dispatchEvent(new Event("fx-play"));
+        clearTimeout(timers.get(entry.target));
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+          timers.set(entry.target, later(900, () => {
+            watch.unobserve(entry.target);
+            entry.target.dispatchEvent(new Event("fx-play"));
+          }));
         }
-      }), { threshold: 0.6 })
+      }), { threshold: [0, 0.6] })
       : null;
     document.querySelectorAll("[data-fx]").forEach((card) => {
       const slug = card.dataset.fx;
@@ -630,8 +669,8 @@
   const ids = Object.keys(ACHIEVEMENTS);
   let audio = null;
   const chime = () => {  // тот же короткий «дзинь» из двух нот, что у плашки GameShelf
+    if (!sound()) return;
     try {
-      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       [[0, 1046.5], [0.09, 1568]].forEach(([start, freq]) => {
         const osc = audio.createOscillator();
         const gain = audio.createGain();
@@ -648,7 +687,7 @@
   };
   const toast = (id) => {
     const [name, text] = ACHIEVEMENTS[id][ru ? "ru" : "en"];
-    const got = ids.filter((key) => store.get(`dgs-ach-${key}`)).length;
+    const got = ids.filter((key) => unlocked.has(key) || store.get(`dgs-ach-${key}`)).length;
     const box = document.createElement("div");
     box.className = "ach-toast";
     box.setAttribute("role", "status");
@@ -656,17 +695,38 @@
       <div><small>${ru ? "Достижение получено" : "Achievement unlocked"} · ${got}/${ids.length}</small><b></b><span></span></div>`;
     box.querySelector("b").textContent = name;
     box.querySelector("span").textContent = text;
-    box.style.bottom = `${20 + document.querySelectorAll(".ach-toast").length * 126}px`;  // несколько сразу — стопкой
-    document.body.append(box);
-    requestAnimationFrame(() => box.classList.add("show"));
+    // Несколько плашек сразу — стопкой в общем контейнере: новая сверху, ушедшая освобождает место
+    let stack = document.querySelector(".ach-stack");
+    if (!stack) {
+      stack = document.createElement("div");
+      stack.className = "ach-stack";
+      document.body.append(stack);
+    }
+    stack.prepend(box);
+    requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add("show")));
     setTimeout(() => { box.classList.remove("show"); setTimeout(() => box.remove(), 600); }, 5200);
   };
   function unlock(id) {
+    if (unlocked.has(id)) return;
+    unlocked.add(id);  // и уже полученные раньше — дальше без чтения localStorage
     if (store.get(`dgs-ach-${id}`)) return;
     store.set(`dgs-ach-${id}`, "1");
     toast(id);
     chime();
   }
+  // Плашку показываем, только когда вкладку видно: проект, открытый в фоновой вкладке, поздравит при переходе в неё
+  const whenVisible = (ms, fn) => {
+    if (!document.hidden) {
+      later(ms, fn);
+      return;
+    }
+    const onShow = () => {
+      if (document.hidden) return;
+      document.removeEventListener("visibilitychange", onShow);
+      later(ms, fn);
+    };
+    document.addEventListener("visibilitychange", onShow);
+  };
 
   const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
   let typed = [];
@@ -683,22 +743,32 @@
     }
   });
 
-  // Перешёл по карточке проекта — «Интерес к инди-студиям» (плашка — уже на странице проекта, куда он попал)
+  // Перешёл по карточке проекта — «Интерес к инди-студиям» (плашка — уже на странице проекта, куда он попал).
+  // Отметка ставится при нажатии любой кнопкой (в т. ч. средней и с Ctrl — «открыть в новой вкладке») и живёт час
   document.querySelectorAll(".card, .spotlight").forEach((link) => {
-    link.addEventListener("click", () => store.set("dgs-pending", "indie"));
+    link.addEventListener("mousedown", (event) => { if (event.button <= 1) store.set("dgs-pending", `indie:${Date.now()}`); });
+    link.addEventListener("click", () => store.set("dgs-pending", `indie:${Date.now()}`));  // клавиатура, касание
   });
+  const pending = /^indie:(\d+)$/.exec(store.get("dgs-pending") || "");
+  const fresh = pending && Date.now() - Number(pending[1]) < 3600 * 1000;
   // Открыл страницы всех проектов — «Интерес именно к DGS!»
   const project = document.querySelector("main[data-project]")?.dataset.project;
   if (project) {
-    if (store.get("dgs-pending") === "indie") later(700, () => unlock("indie"));
+    if (fresh) {
+      whenVisible(700, () => {
+        store.set("dgs-pending", "");  // отметку стираем, только когда достижение действительно выдано
+        unlock("indie");
+      });
+    }
     const total = document.querySelectorAll(".site-footer nav:first-of-type a").length;
     let seen = [];
     try { seen = JSON.parse(store.get("dgs-seen") || "[]"); } catch { seen = []; }
     if (!seen.includes(project)) seen.push(project);
     store.set("dgs-seen", JSON.stringify(seen));
-    if (total && seen.length >= total) later(1500, () => unlock("dgs"));
+    if (total && seen.length >= total) whenVisible(1500, () => unlock("dgs"));
+  } else if (pending && !fresh) {
+    store.set("dgs-pending", "");  // старая отметка от прерванного перехода
   }
-  store.set("dgs-pending", "");
 
   // ---------------------------------------------------------------- просмотр скриншотов
   const t = ru ? { title: "Скриншот", prev: "Назад", next: "Вперёд", close: "Закрыть" }
