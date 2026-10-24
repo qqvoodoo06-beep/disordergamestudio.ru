@@ -181,6 +181,103 @@
     });
   }
 
+  // ---------------------------------------------------------------- самолётик Telegram: петля и сердечко из дыма
+  if (!reduce && mouse) {
+    const NS = "http://www.w3.org/2000/svg";
+    let flying = false;
+    const flightRoute = (flip) => {
+      // Маршрут от значка (0, 0): взлёт → мёртвая петля → сердечко → выход за экран. Y вниз, как на экране.
+      const points = [];
+      const add = (x, y) => points.push([flip ? -x : x, y]);
+      const curve = (p0, p1, p2, steps) => {
+        for (let i = 1; i <= steps; i += 1) {
+          const t = i / steps;
+          add((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0],
+              (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]);
+        }
+      };
+      add(0, 0);
+      const loop = { x: 80, y: -118, r: 40 };
+      curve([0, 0], [6, -96], [loop.x, loop.y + loop.r], 34);
+      for (let i = 1; i <= 64; i += 1) {  // петля: снизу вверх по правой стороне и обратно
+        const a = (Math.PI / 2) - (Math.PI * 2 * i) / 64;
+        add(loop.x + loop.r * Math.cos(a), loop.y + loop.r * Math.sin(a));
+      }
+      const heart = { x: 250, y: -150, k: 4.3 };
+      const heartPoint = (t) => [heart.x + heart.k * 16 * Math.sin(t) ** 3,
+        heart.y - heart.k * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))];
+      const tip = heartPoint(Math.PI);
+      curve([loop.x, loop.y + loop.r], [loop.x + 120, loop.y + loop.r + 30], tip, 30);
+      // Сначала правая половинка, потом левая: к нижнему кончику самолётик приходит, двигаясь вправо-вниз,
+      // и уходит дугой вниз-вправо и вверх, не перечёркивая рисунок
+      for (let i = 1; i <= 150; i += 1) add(...heartPoint(Math.PI - (Math.PI * 2 * i) / 150));
+      curve(tip, [tip[0] + 150, tip[1] + 80], [heart.x + 620, heart.y - 420], 44);
+      return points;
+    };
+
+    const fly = (link) => {
+      const icon = link.querySelector("svg");
+      if (flying || !icon) return;
+      flying = true;
+      const box = icon.getBoundingClientRect();
+      const ox = box.left + box.width / 2;
+      const oy = box.top + box.height / 2;
+      const points = flightRoute(ox + 420 > innerWidth);
+      const lengths = [0];
+      for (let i = 1; i < points.length; i += 1) {
+        lengths.push(lengths[i - 1] + Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]));
+      }
+      const total = lengths[lengths.length - 1];
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("class", "plane-fx");
+      svg.setAttribute("aria-hidden", "true");
+      const d = "M" + points.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" L");
+      svg.innerHTML = `<defs><filter id="smoke-blur" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3"/></filter></defs>
+        <g transform="translate(${ox} ${oy})">
+          <g class="smoke">
+            <path d="${d}" pathLength="1000" fill="none" stroke="rgba(240,171,252,.38)" stroke-width="12"
+                  stroke-linecap="round" stroke-linejoin="round" filter="url(#smoke-blur)" stroke-dasharray="1000" stroke-dashoffset="1000"/>
+            <path d="${d}" pathLength="1000" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1000" stroke-dashoffset="1000"/>
+          </g>
+          <g class="plane"><path d="M15 0 -11 -9 -6 0 -11 9Z" fill="#fff"/><path d="M15 0 -6 0 -11 9Z" fill="#bfe3ff"/></g>
+        </g>`;
+      document.body.append(svg);
+      const trails = svg.querySelectorAll(".smoke path");
+      const plane = svg.querySelector(".plane");
+      icon.classList.add("tg-hidden");
+      const duration = 4300;
+      const start = performance.now();
+      let segment = 1;
+      const step = (now) => {
+        const u = Math.min(1, (now - start) / duration);
+        const eased = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+        const distance = eased * total;
+        while (segment < lengths.length - 1 && lengths[segment] < distance) segment += 1;
+        const [x0, y0] = points[segment - 1];
+        const [x1, y1] = points[segment];
+        const k = (distance - lengths[segment - 1]) / ((lengths[segment] - lengths[segment - 1]) || 1);
+        const angle = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI;
+        plane.setAttribute("transform",
+          `translate(${(x0 + (x1 - x0) * k).toFixed(1)} ${(y0 + (y1 - y0) * k).toFixed(1)}) rotate(${angle.toFixed(1)}) scale(1.5)`);
+        trails.forEach((path) => path.setAttribute("stroke-dashoffset", (1000 - (distance / total) * 1000).toFixed(1)));
+        if (u < 1) {
+          requestAnimationFrame(step);
+          return;
+        }
+        icon.classList.remove("tg-hidden");
+        svg.querySelector(".smoke").classList.add("fade");
+        setTimeout(() => { svg.remove(); flying = false; }, 1500);
+        unlock("heart");
+      };
+      requestAnimationFrame(step);
+    };
+    document.querySelectorAll('a[href*="t.me/"]').forEach((link) => {
+      link.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") fly(link); });
+    });
+  }
+
   // ---------------------------------------------------------------- карточки наклоняются вслед за мышью
   if (!reduce && mouse) {
     document.querySelectorAll(".card, .spotlight").forEach((el) => {
@@ -250,6 +347,8 @@
                  en: ["Collector", "You visited every project page."] },
     pixel: { ru: ["Пиксельный художник", "Нарисовали курсором целую картину."],
              en: ["Pixel artist", "You painted a whole picture with your cursor."] },
+    heart: { ru: ["С любовью", "Самолётик из Telegram нарисовал вам сердечко."],
+             en: ["With love", "The Telegram plane drew you a heart."] },
   };
   const ids = Object.keys(ACHIEVEMENTS);
   let audio = null;

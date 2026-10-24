@@ -286,6 +286,14 @@ p { margin: 0 0 1em; }
 /* ---------- интерактив (site.js) */
 .pixel-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 90; mix-blend-mode: screen; }
 .hero-logo .l, .brand .l { transform-box: fill-box; transform-origin: center; }
+/* Буквы разлетаются за рамку рисунка — не обрезаем их (по умолчанию SVG обрезает всё за своей рамкой) */
+.hero-logo svg, .brand svg { overflow: visible; }
+
+/* Самолётик Telegram и его дымный след */
+.plane-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 95; overflow: visible; }
+.plane-fx .smoke { transition: opacity 1.4s ease; }
+.plane-fx .smoke.fade { opacity: 0; }
+a .tg-hidden { opacity: 0; transition: opacity .25s ease; }
 .brand .l { transition: transform .08s steps(2); }
 .hero-logo { cursor: pointer; }
 .hero-logo svg.burst { animation: burst .7s steps(1); }
