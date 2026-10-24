@@ -1,0 +1,981 @@
+{
+ "projects": {
+  "hoits": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/hoits/cover-ru-cc0d0e-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/hoits/cover-ru-cc0d0e-960.webp",
+      "w": 960,
+      "h": 762
+     }
+    ],
+    "en": [
+     {
+      "src": "img/hoits/cover-en-cc0d0e-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/hoits/cover-en-cc0d0e-960.webp",
+      "w": 960,
+      "h": 762
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/hoits/hero-1b031c-960.webp",
+     "w": 960,
+     "h": 310
+    },
+    {
+     "src": "img/hoits/hero-1b031c-1920.webp",
+     "w": 1920,
+     "h": 620
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/hoits/shot-1-47ab5d-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-1-47ab5d-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "«Понятой»: обычная квартира во время обыска",
+     "en": "“Attesting Witness”: an ordinary apartment during a search",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-2-907138-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-2-907138-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "Та же квартира, когда гаснет свет",
+     "en": "The same apartment after the lights go out",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-3-dd5c9a-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-3-dd5c9a-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "«Ворота были открыты…»",
+     "en": "“The gate was open…”",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-4-f87c4b-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-4-f87c4b-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "…«нет, закрыты» — и ворота захлопываются",
+     "en": "…“no, it was closed” — and it slams shut",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-5-b011a0-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-5-b011a0-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "Кабинет допроса: один стол и протокол",
+     "en": "The interrogation room: one desk and a statement",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-6-af0a7e-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-6-af0a7e-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "Тот же двор, тот же человек — и каждый пересказ его меняет",
+     "en": "Same yard, same man — and every retelling changes him",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-7-4ef416-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-7-4ef416-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "Крыша объекта ночью",
+     "en": "The rooftop at night",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/hoits/shot-8-42a640-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/hoits/shot-8-42a640-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "«Доступ»: наши дни, половина третьего ночи, чужой архив",
+     "en": "“Access”: present day, 2:30 a.m., a stranger's archive",
+     "lang": null,
+     "portrait": false
+    }
+   ],
+   "video": {
+    "src": "media/hoits.mp4",
+    "poster": "media/hoits.webp",
+    "w": 1280,
+    "h": 720,
+    "size_mb": 5.1,
+    "loop": false,
+    "duration": 36.1,
+    "ru": "Трейлер HoITS",
+    "en": "HoITS trailer"
+   },
+   "og": {
+    "ru": {
+     "src": "img/og/hoits-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/hoits-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  },
+  "god-of-bureaucracy": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/god-of-bureaucracy/cover-19df48-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/god-of-bureaucracy/cover-19df48-960.webp",
+      "w": 960,
+      "h": 762
+     }
+    ],
+    "en": [
+     {
+      "src": "img/god-of-bureaucracy/cover-19df48-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/god-of-bureaucracy/cover-19df48-960.webp",
+      "w": 960,
+      "h": 762
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/god-of-bureaucracy/hero-438c68-960.webp",
+     "w": 960,
+     "h": 600
+    },
+    {
+     "src": "img/god-of-bureaucracy/hero-438c68-1920.webp",
+     "w": 1440,
+     "h": 900
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-1-b77469-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-1-b77469-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Смена в разгаре",
+     "en": "A shift in full swing",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-2-d7d733-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-2-d7d733-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Рабочий стол посреди смены",
+     "en": "The desk mid-shift",
+     "lang": "ru",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-3-80e810-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-3-80e810-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Под лупой время стоит",
+     "en": "The clock stops while you use the magnifying glass",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-4-729f92-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-4-729f92-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Приказ на день: норма, длина смены и новое правило",
+     "en": "The order of the day: quota, shift length and a new rule",
+     "lang": "ru",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-5-d37893-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-5-d37893-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Сюжетное дело: три решения, у каждого своя цена",
+     "en": "A story case: three decisions, each with its own price",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-6-d1f11c-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-6-d1f11c-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Вечер дома",
+     "en": "An evening at home",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/god-of-bureaucracy/shot-7-15bea7-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/god-of-bureaucracy/shot-7-15bea7-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Вечер дома: еда, квартира, отопление, лекарства",
+     "en": "An evening at home: food, rent, heating, medicine",
+     "lang": "ru",
+     "portrait": false
+    }
+   ],
+   "video": null,
+   "og": {
+    "ru": {
+     "src": "img/og/god-of-bureaucracy-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/god-of-bureaucracy-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  },
+  "gameshelf": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/gameshelf/cover-dca0be-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/gameshelf/cover-dca0be-960.webp",
+      "w": 630,
+      "h": 500
+     }
+    ],
+    "en": [
+     {
+      "src": "img/gameshelf/cover-dca0be-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/gameshelf/cover-dca0be-960.webp",
+      "w": 630,
+      "h": 500
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/gameshelf/hero-5c58b8-960.webp",
+     "w": 960,
+     "h": 625
+    },
+    {
+     "src": "img/gameshelf/hero-5c58b8-1920.webp",
+     "w": 1320,
+     "h": 860
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-1-c72640-640.webp",
+      "w": 640,
+      "h": 417
+     },
+     "full": {
+      "src": "img/gameshelf/shot-1-c72640-1600.webp",
+      "w": 1320,
+      "h": 860
+     },
+     "ru": "Библиотека со статусами и часами",
+     "en": "The library with statuses and hours",
+     "lang": "ru",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-2-5c58b8-640.webp",
+      "w": 640,
+      "h": 417
+     },
+     "full": {
+      "src": "img/gameshelf/shot-2-5c58b8-1600.webp",
+      "w": 1320,
+      "h": 860
+     },
+     "ru": "Библиотека со статусами и часами",
+     "en": "The library with statuses and hours",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-3-2d8444-640.webp",
+      "w": 640,
+      "h": 462
+     },
+     "full": {
+      "src": "img/gameshelf/shot-3-2d8444-1600.webp",
+      "w": 1080,
+      "h": 780
+     },
+     "ru": "Окно игры: статус, оценка, часы и достижения",
+     "en": "The game window",
+     "lang": "ru",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-4-2a4c5c-640.webp",
+      "w": 640,
+      "h": 462
+     },
+     "full": {
+      "src": "img/gameshelf/shot-4-2a4c5c-1600.webp",
+      "w": 1080,
+      "h": 780
+     },
+     "ru": "Окно игры",
+     "en": "The game window: status, rating, hours and achievements",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-5-e44ebe-640.webp",
+      "w": 640,
+      "h": 417
+     },
+     "full": {
+      "src": "img/gameshelf/shot-5-e44ebe-1600.webp",
+      "w": 1320,
+      "h": 860
+     },
+     "ru": "Свои достижения GameShelf",
+     "en": "GameShelf achievements",
+     "lang": "ru",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-6-b3403d-640.webp",
+      "w": 640,
+      "h": 417
+     },
+     "full": {
+      "src": "img/gameshelf/shot-6-b3403d-1600.webp",
+      "w": 1320,
+      "h": 860
+     },
+     "ru": "Свои достижения GameShelf",
+     "en": "GameShelf's own achievements",
+     "lang": "en",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-7-93b078-640.webp",
+      "w": 640,
+      "h": 417
+     },
+     "full": {
+      "src": "img/gameshelf/shot-7-93b078-1600.webp",
+      "w": 1320,
+      "h": 860
+     },
+     "ru": "Статистика: часы по неделям и рекорды",
+     "en": "Statistics",
+     "lang": "ru",
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/gameshelf/shot-8-c05b4e-640.webp",
+      "w": 640,
+      "h": 417
+     },
+     "full": {
+      "src": "img/gameshelf/shot-8-c05b4e-1600.webp",
+      "w": 1320,
+      "h": 860
+     },
+     "ru": "Статистика",
+     "en": "Statistics: hours by week and records",
+     "lang": "en",
+     "portrait": false
+    }
+   ],
+   "video": {
+    "src": "media/gameshelf.mp4",
+    "poster": "media/gameshelf.webp",
+    "w": 800,
+    "h": 450,
+    "size_mb": 0.1,
+    "loop": true,
+    "duration": 3.8,
+    "ru": "Плашка о новом достижении поверх игры",
+    "en": "A new achievement popping up over the game"
+   },
+   "og": {
+    "ru": {
+     "src": "img/og/gameshelf-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/gameshelf-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  },
+  "music-lotto": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/music-lotto/cover-ru-8fe8a8-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/music-lotto/cover-ru-8fe8a8-960.webp",
+      "w": 960,
+      "h": 762
+     }
+    ],
+    "en": [
+     {
+      "src": "img/music-lotto/cover-en-8fe8a8-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/music-lotto/cover-en-8fe8a8-960.webp",
+      "w": 960,
+      "h": 762
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/music-lotto/hero-57c39e-960.webp",
+     "w": 960,
+     "h": 600
+    },
+    {
+     "src": "img/music-lotto/hero-57c39e-1920.webp",
+     "w": 1440,
+     "h": 900
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/music-lotto/shot-1-57c39e-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/music-lotto/shot-1-57c39e-1600.webp",
+      "w": 1440,
+      "h": 900
+     },
+     "ru": "Пульт ведущего: плейлист, правила и код комнаты",
+     "en": "The host console: playlist, rules and room code",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/music-lotto/shot-2-64bb51-640.webp",
+      "w": 640,
+      "h": 400
+     },
+     "full": {
+      "src": "img/music-lotto/shot-2-64bb51-1600.webp",
+      "w": 1280,
+      "h": 800
+     },
+     "ru": "Вход для игроков: код комнаты и имя",
+     "en": "Players join with a room code and a name",
+     "lang": null,
+     "portrait": false
+    }
+   ],
+   "video": null,
+   "og": {
+    "ru": {
+     "src": "img/og/music-lotto-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/music-lotto-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  },
+  "uprising-lands-of-the-red": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/uprising-lands-of-the-red/cover-8549ac-480.webp",
+      "w": 480,
+      "h": 270
+     },
+     {
+      "src": "img/uprising-lands-of-the-red/cover-8549ac-960.webp",
+      "w": 960,
+      "h": 540
+     }
+    ],
+    "en": [
+     {
+      "src": "img/uprising-lands-of-the-red/cover-8549ac-480.webp",
+      "w": 480,
+      "h": 270
+     },
+     {
+      "src": "img/uprising-lands-of-the-red/cover-8549ac-960.webp",
+      "w": 960,
+      "h": 540
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/uprising-lands-of-the-red/hero-f038bd-960.webp",
+     "w": 960,
+     "h": 540
+    },
+    {
+     "src": "img/uprising-lands-of-the-red/hero-f038bd-1920.webp",
+     "w": 1280,
+     "h": 720
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/uprising-lands-of-the-red/shot-1-a834c0-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/uprising-lands-of-the-red/shot-1-a834c0-1600.webp",
+      "w": 1600,
+      "h": 900
+     },
+     "ru": "Глава 1 «Пепел мятежа»: растущая база",
+     "en": "Chapter 1, “Ashes of the Revolt”: a growing base",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/uprising-lands-of-the-red/shot-2-f038bd-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/uprising-lands-of-the-red/shot-2-f038bd-1600.webp",
+      "w": 1280,
+      "h": 720
+     },
+     "ru": "Укреплённая база: стены, башня, катапульты и рыцари",
+     "en": "A fortified base: walls, a tower, catapults and knights",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/uprising-lands-of-the-red/shot-3-2197ce-640.webp",
+      "w": 640,
+      "h": 360
+     },
+     "full": {
+      "src": "img/uprising-lands-of-the-red/shot-3-2197ce-1600.webp",
+      "w": 1280,
+      "h": 721
+     },
+     "ru": "Главное меню и выбор сложности",
+     "en": "The main menu and difficulty choice",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/uprising-lands-of-the-red/shot-4-17b76e-640.webp",
+      "w": 640,
+      "h": 1138
+     },
+     "full": {
+      "src": "img/uprising-lands-of-the-red/shot-4-17b76e-1600.webp",
+      "w": 1080,
+      "h": 1920
+     },
+     "ru": "Сторожевая башня Синей Империи: новая графика построек",
+     "en": "A Blue Empire watchtower: new building art",
+     "lang": null,
+     "portrait": false
+    }
+   ],
+   "video": null,
+   "og": {
+    "ru": {
+     "src": "img/og/uprising-lands-of-the-red-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/uprising-lands-of-the-red-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  },
+  "tidying-the-puzzle-gallery": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/tidying-the-puzzle-gallery/cover-c23179-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/tidying-the-puzzle-gallery/cover-c23179-960.webp",
+      "w": 630,
+      "h": 500
+     }
+    ],
+    "en": [
+     {
+      "src": "img/tidying-the-puzzle-gallery/cover-c23179-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/tidying-the-puzzle-gallery/cover-c23179-960.webp",
+      "w": 630,
+      "h": 500
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/tidying-the-puzzle-gallery/hero-50f434-960.webp",
+     "w": 960,
+     "h": 477
+    },
+    {
+     "src": "img/tidying-the-puzzle-gallery/hero-50f434-1920.webp",
+     "w": 1919,
+     "h": 953
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/tidying-the-puzzle-gallery/shot-1-50f434-640.webp",
+      "w": 640,
+      "h": 318
+     },
+     "full": {
+      "src": "img/tidying-the-puzzle-gallery/shot-1-50f434-1600.webp",
+      "w": 1600,
+      "h": 795
+     },
+     "ru": "Дальний зал: кусочки рассыпаны по ковру",
+     "en": "The far hall: pieces scattered over the rug",
+     "lang": null,
+     "portrait": false
+    },
+    {
+     "thumb": {
+      "src": "img/tidying-the-puzzle-gallery/shot-2-0c4296-640.webp",
+      "w": 640,
+      "h": 317
+     },
+     "full": {
+      "src": "img/tidying-the-puzzle-gallery/shot-2-0c4296-1600.webp",
+      "w": 1600,
+      "h": 792
+     },
+     "ru": "Большой зал: наведите прицел на кусочек, чтобы поднять его",
+     "en": "The great hall: aim at a piece to pick it up",
+     "lang": null,
+     "portrait": false
+    }
+   ],
+   "video": null,
+   "og": {
+    "ru": {
+     "src": "img/og/tidying-the-puzzle-gallery-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/tidying-the-puzzle-gallery-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  },
+  "pentomino": {
+   "cover": {
+    "ru": [
+     {
+      "src": "img/pentomino/cover-f84119-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/pentomino/cover-f84119-960.webp",
+      "w": 630,
+      "h": 500
+     }
+    ],
+    "en": [
+     {
+      "src": "img/pentomino/cover-f84119-480.webp",
+      "w": 480,
+      "h": 381
+     },
+     {
+      "src": "img/pentomino/cover-f84119-960.webp",
+      "w": 630,
+      "h": 500
+     }
+    ]
+   },
+   "hero": [
+    {
+     "src": "img/pentomino/hero-f84119-960.webp",
+     "w": 630,
+     "h": 500
+    },
+    {
+     "src": "img/pentomino/hero-f84119-1920.webp",
+     "w": 630,
+     "h": 500
+    }
+   ],
+   "shots": [
+    {
+     "thumb": {
+      "src": "img/pentomino/shot-1-c1835e-640.webp",
+      "w": 360,
+      "h": 645
+     },
+     "full": {
+      "src": "img/pentomino/shot-1-c1835e-1600.webp",
+      "w": 480,
+      "h": 860
+     },
+     "ru": "Партия в разгаре",
+     "en": "A game in progress",
+     "lang": "ru",
+     "portrait": true
+    },
+    {
+     "thumb": {
+      "src": "img/pentomino/shot-2-42403d-640.webp",
+      "w": 360,
+      "h": 645
+     },
+     "full": {
+      "src": "img/pentomino/shot-2-42403d-1600.webp",
+      "w": 480,
+      "h": 860
+     },
+     "ru": "Партия в разгаре",
+     "en": "A game in progress",
+     "lang": "en",
+     "portrait": true
+    },
+    {
+     "thumb": {
+      "src": "img/pentomino/shot-3-89f787-640.webp",
+      "w": 360,
+      "h": 645
+     },
+     "full": {
+      "src": "img/pentomino/shot-3-89f787-1600.webp",
+      "w": 480,
+      "h": 860
+     },
+     "ru": "Три режима на выбор",
+     "en": "Three modes to choose from",
+     "lang": "ru",
+     "portrait": true
+    },
+    {
+     "thumb": {
+      "src": "img/pentomino/shot-4-d927b9-640.webp",
+      "w": 360,
+      "h": 645
+     },
+     "full": {
+      "src": "img/pentomino/shot-4-d927b9-1600.webp",
+      "w": 480,
+      "h": 860
+     },
+     "ru": "Три режима на выбор",
+     "en": "Three modes to choose from",
+     "lang": "en",
+     "portrait": true
+    }
+   ],
+   "video": null,
+   "og": {
+    "ru": {
+     "src": "img/og/pentomino-ru.jpg",
+     "w": 1200,
+     "h": 630
+    },
+    "en": {
+     "src": "img/og/pentomino-en.jpg",
+     "w": 1200,
+     "h": 630
+    }
+   }
+  }
+ },
+ "og": {
+  "ru": {
+   "src": "img/og/home-ru.jpg",
+   "w": 1200,
+   "h": 630
+  },
+  "en": {
+   "src": "img/og/home-en.jpg",
+   "w": 1200,
+   "h": 630
+  }
+ }
+}

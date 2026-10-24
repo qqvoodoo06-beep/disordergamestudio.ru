@@ -1,0 +1,7 @@
+research/
+assets-src/cache/
+assets-src/generated/
+assets-src/brand/
+.claude/
+__pycache__/
+*.pyc
