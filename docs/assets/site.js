@@ -60,7 +60,7 @@
       ctx.clearRect(0, 0, innerWidth, innerHeight);
     }
   };
-  const spawn = (x, y, count, spread, speed, life = 46) => {
+  const spawn = (x, y, count, spread, speed, life = 46, colors = COLORS) => {
     if (!pixels.canvas) return;
     for (let i = 0; i < count; i += 1) {
       if (pixels.list.length > 320) pixels.list.shift();
@@ -69,7 +69,7 @@
       pixels.list.push({
         x: x + (Math.random() - 0.5) * spread, y: y + (Math.random() - 0.5) * spread,
         vx: Math.cos(angle) * velocity, vy: Math.sin(angle) * velocity,
-        size: rand([3, 4, 4, 5, 6, 8]), life: 0, max: life + Math.random() * 30, color: rand(COLORS),
+        size: rand([3, 4, 4, 5, 6, 8]), life: 0, max: life + Math.random() * 30, color: rand(colors),
       });
     }
     if (!pixels.running) {
@@ -278,6 +278,281 @@
     });
   }
 
+  // ---------------------------------------------------------------- эффекты карточек проектов
+  // У каждого проекта свой эффект о сути игры. Играет один раз за посещение сайта (sessionStorage),
+  // чтобы не надоедать: с мышью — при наведении, на телефоне — когда карточка появилась на экране.
+  const make = (tag, className, html = "") => {
+    const node = document.createElement(tag);
+    node.className = className;
+    node.innerHTML = html;
+    return node;
+  };
+  const later = (ms, fn) => setTimeout(fn, ms);
+  const finish = (node, at) => { later(at, () => node.classList.add("fx-out")); later(at + 650, () => node.remove()); };
+  const canvasIn = (box) => {
+    const canvas = make("canvas", "fx-layer");
+    box.append(canvas);
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = box.clientWidth * ratio;
+    canvas.height = box.clientHeight * ratio;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+    return { canvas, ctx, w: box.clientWidth, h: box.clientHeight };
+  };
+  const run = (duration, draw, done) => {  // кадры с t от 0 до duration (мс)
+    const start = performance.now();
+    const frame = (now) => {
+      const t = now - start;
+      draw(Math.min(t, duration));
+      if (t < duration) requestAnimationFrame(frame); else done();
+    };
+    requestAnimationFrame(frame);
+  };
+  const tone = (notes, gap = 0.11, volume = 0.05) => {  // короткая мелодия, только если человек уже что-то нажимал
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      notes.forEach((freq, i) => {
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        const t = audio.currentTime + i * gap;
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(volume, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        osc.connect(gain).connect(audio.destination);
+        osc.start(t);
+        osc.stop(t + 0.5);
+      });
+    } catch { /* без звука */ }
+  };
+
+  const FX = {
+    // Реткон: горящий шов проходит по кадру — та же квартира, но показания уже другие
+    hoits(box, card) {
+      const layer = make("div", "fx-layer fx-retcon",
+        `<img src="${card.dataset.fxA}" alt=""><img class="after" src="${card.dataset.fxB}" alt=""><i></i>
+         <b>${ru ? "Показания изменены" : "Testimony changed"}</b>`);
+      box.append(layer);
+      Promise.all([...layer.querySelectorAll("img")].map((img) => img.decode().catch(() => {}))).then(() => {
+        layer.classList.add("go");
+        finish(layer, 3300);
+      });
+    },
+    // Печать с размаху: «Одобрено» (чаще) или «Отказано», карточка вздрагивает, брызги чернил
+    "god-of-bureaucracy"(box, card) {
+      const ok = Math.random() < 0.7;
+      const stamp = make("div", `fx-layer fx-stamp ${ok ? "ok" : "no"}`,
+        `<span>${ok ? (ru ? "Одобрено" : "Approved") : (ru ? "Отказано" : "Denied")}</span>`);
+      box.append(stamp);
+      requestAnimationFrame(() => stamp.classList.add("go"));
+      later(260, () => {
+        card.classList.add("fx-shake");
+        const r = box.getBoundingClientRect();
+        spawn(r.left + r.width / 2, r.top + r.height / 2, 18, r.width * 0.35, 3, 34, ["#c4161c", "#7f1d1d", "#ef4444"]);
+      });
+      later(650, () => card.classList.remove("fx-shake"));
+      finish(stamp, 2400);
+    },
+    // Картина рассыпается на кусочки пазла и собирается обратно
+    "tidying-the-puzzle-gallery"(box) {
+      const img = box.querySelector("img");
+      const w = box.clientWidth;
+      const h = box.clientHeight;
+      const cols = 5;
+      const rows = 4;
+      const layer = make("div", "fx-layer fx-puzzle");
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < cols; c += 1) {
+          const piece = document.createElement("div");
+          const x = (c * w) / cols;
+          const y = (r * h) / rows;
+          Object.assign(piece.style, {
+            left: `${x}px`, top: `${y}px`, width: `${w / cols}px`, height: `${h / rows}px`,
+            backgroundImage: `url("${img.currentSrc || img.src}")`, backgroundSize: `${w}px ${h}px`,
+            backgroundPosition: `${-x}px ${-y}px`,
+          });
+          piece.style.setProperty("--dx", `${(c - (cols - 1) / 2) * 26 + (Math.random() - 0.5) * 30}px`);
+          piece.style.setProperty("--dy", `${(r - (rows - 1) / 2) * 24 + (Math.random() - 0.5) * 30}px`);
+          piece.style.setProperty("--rot", `${(Math.random() - 0.5) * 70}deg`);
+          piece.style.setProperty("--d", `${Math.random() * 160}ms`);
+          layer.append(piece);
+        }
+      }
+      box.append(layer);
+      later(2200, () => layer.remove());
+    },
+    // Сверху падают неоновые пентамино, собирают линию — она вспыхивает и исчезает
+    pentomino(box) {
+      const { canvas, ctx, w, h } = canvasIn(box);
+      const cols = 10;
+      const cell = w / cols;
+      const bottom = Math.floor(h / cell) - 1;
+      const pieces = [  // [столбец, строка от низа] клеток; вместе закрывают нижнюю линию целиком
+        { color: "#22d3ee", cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]] },
+        { color: "#d946ef", cells: [[5, 0], [6, 0], [7, 0], [8, 0], [5, 1]] },
+        { color: "#fbbf24", cells: [[9, 0], [9, 1], [9, 2], [9, 3], [9, 4]] },
+      ];
+      const drop = 380;
+      const landed = 3 * drop + 120;
+      const square = (x, y, color, alpha = 1) => {
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = `${color}33`;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+        ctx.strokeRect(x + 3, y + 3, cell - 6, cell - 6);
+      };
+      run(landed + 1500, (t) => {
+        ctx.clearRect(0, 0, w, h);
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(10, 8, 20, .45)";
+        ctx.fillRect(0, 0, w, h);
+        const cleared = t > landed + 600;
+        const flash = t > landed && !cleared && Math.floor((t - landed) / 100) % 2 === 0;
+        pieces.forEach((piece, i) => {
+          const k = Math.min(1, Math.max(0, (t - i * drop) / drop));
+          if (k <= 0) return;
+          const fall = (1 - k * k) * (bottom + 6) * cell;  // падают с ускорением
+          piece.cells.forEach(([cx, cy]) => {
+            if (cleared && cy === 0) return;
+            const row = bottom - cy + (cleared ? 1 : 0);
+            const color = flash && cy === 0 ? "#ffffff" : piece.color;
+            square(cx * cell, row * cell - fall, color);
+          });
+        });
+      }, () => finish(canvas, 0));
+    },
+    // Из карточки вылетают ноты, и (если на сайте уже что-то нажимали) звучит короткая мелодия
+    "music-lotto"(box) {
+      const layer = make("div", "fx-layer fx-notes");
+      const colors = ["#5eead4", "#a78bfa", "#f0abfc", "#fde68a", "#93c5fd"];
+      for (let i = 0; i < 18; i += 1) {
+        const note = make("span", "", rand(["♪", "♫", "♬", "♩"]));
+        Object.assign(note.style, { left: `${5 + Math.random() * 88}%`, fontSize: `${22 + Math.random() * 24}px`,
+          color: rand(colors) });
+        note.style.setProperty("--t", `${1.5 + Math.random() * 0.9}s`);
+        note.style.setProperty("--d", `${Math.random() * 420}ms`);
+        note.style.setProperty("--sway", `${(Math.random() - 0.5) * 60}px`);
+        note.style.setProperty("--rot", `${(Math.random() - 0.5) * 50}deg`);
+        layer.append(note);
+      }
+      box.append(layer);
+      tone([523.25, 659.25, 783.99, 1046.5]);
+      later(3200, () => layer.remove());
+    },
+    // Красные и синие пиксельные солдатики сходятся, и над полем поднимается красное знамя
+    "uprising-lands-of-the-red"(box) {
+      const { canvas, ctx, w, h } = canvasIn(box);
+      const p = Math.max(3, Math.round(w / 85));
+      const ground = Math.round(h * 0.9);
+      const meet = w / 2;
+      const soldier = (x, color, step, alpha, facing) => {
+        ctx.globalAlpha = alpha;
+        const y = ground - 9 * p - (step % 2) * p * 0.5;
+        ctx.fillStyle = color;
+        ctx.fillRect(x - p, y, 2 * p, 2 * p);                  // шлем
+        ctx.fillRect(x - p, y + 2 * p, 2 * p, 4 * p);          // туловище
+        ctx.fillStyle = "#1f1630";
+        ctx.fillRect(x - p + (step % 2 ? 0 : p), y + 6 * p, p, 3 * p);  // ноги шагают
+        ctx.fillRect(x + (step % 2 ? 0 : -p), y + 6 * p, p, 3 * p);
+        ctx.fillStyle = "#d6d3e0";
+        ctx.fillRect(x + facing * 2 * p, y - 3 * p, Math.max(1, p / 2), 9 * p);  // копьё
+      };
+      const sparks = [];
+      run(3400, (t) => {
+        ctx.clearRect(0, 0, w, h);
+        const g = ctx.createLinearGradient(0, ground - 40, 0, h);
+        g.addColorStop(0, "rgba(10, 8, 20, 0)");
+        g.addColorStop(1, "rgba(10, 8, 20, .8)");
+        ctx.fillStyle = g;
+        ctx.globalAlpha = 1;
+        ctx.fillRect(0, ground - 40, w, h);
+        const march = Math.min(1, t / 1300);
+        const step = Math.floor(t / 140);
+        for (let i = 0; i < 4; i += 1) {
+          const red = -30 - i * 7 * p + march * (meet - 10 - 8 * p);
+          const blue = w + 30 + i * 7 * p - march * (meet - 10 - 8 * p);
+          const fallen = t > 1500 ? Math.max(0, 1 - (t - 1500) / 500) : 1;
+          soldier(red, "#ef4444", step + i, 1, 1);
+          soldier(blue, "#3b82f6", step + i + 1, fallen, -1);
+        }
+        if (t > 1300 && t < 1360 && !sparks.length) {
+          for (let i = 0; i < 26; i += 1) {
+            sparks.push({ x: meet, y: ground - 6 * p, vx: (Math.random() - 0.5) * 6, vy: -Math.random() * 5, life: 0 });
+          }
+        }
+        sparks.forEach((s) => {
+          s.life += 1; s.x += s.vx; s.y += s.vy; s.vy += 0.25;
+          ctx.globalAlpha = Math.max(0, 1 - s.life / 40);
+          ctx.fillStyle = rand(["#fde68a", "#fb923c", "#ffffff"]);
+          ctx.fillRect(Math.round(s.x / p) * p, Math.round(s.y / p) * p, p, p);
+        });
+        if (t > 1700) {  // знамя: древко растёт, полотнище развевается
+          const k = Math.min(1, (t - 1700) / 600);
+          const top = ground - 30 * p * k;
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = "#d6d3e0";
+          ctx.fillRect(meet - p / 2, top, p, ground - top);
+          if (k > 0.6) {
+            for (let i = 0; i < 12; i += 1) {
+              const wave = Math.sin(t / 120 + i / 2) * p * 1.2;
+              ctx.fillStyle = i % 4 === 3 ? "#b91c1c" : "#ef4444";
+              ctx.fillRect(meet + p / 2 + i * p, top + wave, p, 8 * p);
+            }
+          }
+        }
+      }, () => finish(canvas, 300));
+    },
+    // Часы на обложке набегают, и выскакивает плашка достижения — как в самой программе
+    gameshelf(box) {
+      const layer = make("div", "fx-layer fx-shelf",
+        `<span class="pill">🕒 <em>0</em></span>
+         <div class="ach"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.5M16 6h3.5v1.5A3 3 0 0 1 16 10.5M12 13v4M8.5 20h7M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+         <div><small>${ru ? "Достижение получено" : "Achievement unlocked"}</small><strong>${ru ? "Заглянул в GameShelf" : "Peeked at GameShelf"}</strong></div></div>`);
+      box.append(layer);
+      const counter = layer.querySelector("em");
+      run(1400, (t) => {
+        const hours = 46.5 * (1 - (1 - t / 1400) ** 3);
+        counter.textContent = `${(Math.round(hours * 10) / 10).toFixed(1).replace(".", ru ? "," : ".")} ${ru ? "ч" : "h"}`;
+      }, () => finish(layer, 1900));
+    },
+  };
+
+  if (!reduce) {
+    const played = new Set();
+    const firstTime = (slug) => {  // true — эффект ещё не играл в это посещение (и теперь отмечен)
+      if (played.has(slug)) return false;
+      played.add(slug);
+      try {
+        if (sessionStorage.getItem(`dgs-fx-${slug}`)) return false;
+        sessionStorage.setItem(`dgs-fx-${slug}`, "1");
+      } catch { /* без sessionStorage — хотя бы раз на этой странице */ }
+      return true;
+    };
+    const watch = "IntersectionObserver" in window && !mouse
+      ? new IntersectionObserver((entries) => entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          watch.unobserve(entry.target);
+          entry.target.dispatchEvent(new Event("fx-play"));
+        }
+      }), { threshold: 0.6 })
+      : null;
+    document.querySelectorAll("[data-fx]").forEach((card) => {
+      const slug = card.dataset.fx;
+      const box = card.querySelector(".thumb, .art");
+      if (!FX[slug] || !box) return;
+      const play = () => { if (firstTime(slug)) FX[slug](box, card); };
+      card.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") play(); });
+      card.addEventListener("fx-play", play);
+      if (watch) watch.observe(card);
+    });
+  }
+
   // ---------------------------------------------------------------- карточки наклоняются вслед за мышью
   if (!reduce && mouse) {
     document.querySelectorAll(".card, .spotlight").forEach((el) => {
@@ -343,8 +618,10 @@
               en: ["Cheater!", "You entered the Konami code. Respect for the classics."] },
     chaos: { ru: ["Хаос под контролем", "Пять щелчков по логотипу — и всё пошло вразнос."],
              en: ["Chaos under control", "Five clicks on the logo, and everything fell apart."] },
-    collector: { ru: ["Коллекционер", "Вы заглянули на страницы всех проектов студии."],
-                 en: ["Collector", "You visited every project page."] },
+    indie: { ru: ["Интерес к инди-студиям", "Вы перешли по карточке проекта, чтобы узнать о нём больше."],
+             en: ["Into indie studios", "You opened a project card to learn more."] },
+    dgs: { ru: ["Интерес именно к DGS!", "Вы посмотрели все проекты Disorder Game Studio."],
+           en: ["Into DGS specifically!", "You checked out every Disorder Game Studio project."] },
     pixel: { ru: ["Пиксельный художник", "Нарисовали курсором целую картину."],
              en: ["Pixel artist", "You painted a whole picture with your cursor."] },
     heart: { ru: ["С любовью", "Самолётик из Telegram нарисовал вам сердечко."],
@@ -379,6 +656,7 @@
       <div><small>${ru ? "Достижение получено" : "Achievement unlocked"} · ${got}/${ids.length}</small><b></b><span></span></div>`;
     box.querySelector("b").textContent = name;
     box.querySelector("span").textContent = text;
+    box.style.bottom = `${20 + document.querySelectorAll(".ach-toast").length * 126}px`;  // несколько сразу — стопкой
     document.body.append(box);
     requestAnimationFrame(() => box.classList.add("show"));
     setTimeout(() => { box.classList.remove("show"); setTimeout(() => box.remove(), 600); }, 5200);
@@ -405,16 +683,22 @@
     }
   });
 
-  // Страницы проектов, которые человек уже открыл: все — «Коллекционер»
+  // Перешёл по карточке проекта — «Интерес к инди-студиям» (плашка — уже на странице проекта, куда он попал)
+  document.querySelectorAll(".card, .spotlight").forEach((link) => {
+    link.addEventListener("click", () => store.set("dgs-pending", "indie"));
+  });
+  // Открыл страницы всех проектов — «Интерес именно к DGS!»
   const project = document.querySelector("main[data-project]")?.dataset.project;
   if (project) {
+    if (store.get("dgs-pending") === "indie") later(700, () => unlock("indie"));
     const total = document.querySelectorAll(".site-footer nav:first-of-type a").length;
     let seen = [];
     try { seen = JSON.parse(store.get("dgs-seen") || "[]"); } catch { seen = []; }
     if (!seen.includes(project)) seen.push(project);
     store.set("dgs-seen", JSON.stringify(seen));
-    if (total && seen.length >= total) setTimeout(() => unlock("collector"), 900);
+    if (total && seen.length >= total) later(1500, () => unlock("dgs"));
   }
+  store.set("dgs-pending", "");
 
   // ---------------------------------------------------------------- просмотр скриншотов
   const t = ru ? { title: "Скриншот", prev: "Назад", next: "Вперёд", close: "Закрыть" }

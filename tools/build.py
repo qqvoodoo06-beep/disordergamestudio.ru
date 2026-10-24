@@ -243,11 +243,20 @@ def platforms_text(project: dict, lang: str) -> str:
     return text[:1].upper() + text[1:]
 
 
+def fx_attrs(project: dict, here: str, size: str) -> str:
+    """Данные для эффекта карточки в site.js: какой проект и (для HoITS) кадры «до» и «после» реткона."""
+    attrs = f' data-fx="{project["slug"]}"'
+    if project["slug"] == "hoits":
+        shots = MEDIA["projects"]["hoits"]["shots"]
+        attrs += f' data-fx-a="{rel(here, shots[0][size]["src"])}" data-fx-b="{rel(here, shots[1][size]["src"])}"'
+    return attrs
+
+
 def card(project: dict, lang: str, here: str) -> str:
     t, text = T[lang], project[lang]
     cover = MEDIA["projects"][project["slug"]]["cover"][lang]
     href = rel(here, page_path(lang, project["slug"]))
-    return f"""<a class="card" href="{href}" style="--accent:{project['accent']}">
+    return f"""<a class="card" href="{href}"{fx_attrs(project, here, 'thumb')} style="--accent:{project['accent']}">
   <div class="thumb">{img_tag(cover, '', here, '(max-width: 700px) 92vw, 380px')}</div>
   <div class="body">
     <div><span class="pill {project['badge']}">{t['badge'][project['badge']]}</span></div>
@@ -309,7 +318,7 @@ def home_page(lang: str) -> str:
 <section class="section" id="projects" aria-labelledby="projects-title">
   <div class="wrap">
     <div class="eyebrow">{t['spotlight']}</div>
-    <a class="spotlight" href="{rel(here, page_path(lang, featured['slug']))}" style="--accent:{featured['accent']}">
+    <a class="spotlight" href="{rel(here, page_path(lang, featured['slug']))}"{fx_attrs(featured, here, 'full')} style="--accent:{featured['accent']}">
       <div class="art">{img_tag(f_media['hero'], '', here, '(max-width: 860px) 100vw, 640px')}</div>
       <div class="body">
         <div><span class="pill {featured['badge']}">{esc(f_text['status'])}</span></div>

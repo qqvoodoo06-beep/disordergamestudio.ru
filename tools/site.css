@@ -350,3 +350,86 @@ body.screen-glitch main { animation: screen-glitch .9s steps(1); }
   60% { transform: translate(4px, 0); filter: invert(.12) hue-rotate(40deg); }
   80% { transform: none; filter: none; }
 }
+
+/* ---------- эффекты карточек проектов (один раз за посещение, site.js) */
+.card .thumb { position: relative; }
+.fx-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+canvas.fx-layer { width: 100%; height: 100%; }
+.fx-out { opacity: 0 !important; transition: opacity .6s ease !important; }
+
+/* HoITS: реткон — горящий шов проходит по кадру, и квартира становится другой */
+.fx-retcon { opacity: 0; transition: opacity .3s ease; }
+.fx-retcon.go { opacity: 1; }
+.fx-retcon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fx-retcon .after { clip-path: inset(0 100% 0 0); }
+.fx-retcon.go .after { animation: retcon-sweep 1.2s .5s cubic-bezier(.7, 0, .3, 1) forwards; }
+@keyframes retcon-sweep { to { clip-path: inset(0 0 0 0); } }
+.fx-retcon i {
+  position: absolute; top: -10%; bottom: -10%; left: 0; width: 3px; opacity: 0;
+  background: #ffd9b0; box-shadow: 0 0 10px 3px #ff6a2b, 0 0 34px 12px rgba(255, 106, 43, .55);
+}
+.fx-retcon.go i { animation: retcon-seam 1.2s .5s cubic-bezier(.7, 0, .3, 1) forwards; }
+@keyframes retcon-seam { 0% { left: 0; opacity: 1; } 96% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+.fx-retcon b {
+  position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); white-space: nowrap; opacity: 0;
+  font: 800 12px/1 var(--font); letter-spacing: .26em; text-transform: uppercase; color: #ffd2b0;
+  background: rgba(12, 6, 4, .78); padding: 9px 14px; border: 1px solid rgba(255, 140, 80, .65);
+}
+.fx-retcon.go b { animation: retcon-label .8s 1.7s steps(1) forwards; }
+@keyframes retcon-label { 0% { opacity: 1; } 15% { opacity: 0; } 30% { opacity: 1; } 45% { opacity: .25; } 60%, 100% { opacity: 1; } }
+
+/* Бог бюрократии: печать с размаху */
+.fx-stamp { display: grid; place-items: center; }
+.fx-stamp span {
+  font: 900 clamp(22px, 3.2vw, 34px)/1 var(--font); letter-spacing: .14em; text-transform: uppercase;
+  color: #c4161c; border: 5px double #c4161c; border-radius: 8px; padding: 10px 20px 8px;
+  background: rgba(255, 240, 230, .08); mix-blend-mode: multiply; opacity: 0;
+  transform: rotate(-20deg) scale(2.4); filter: drop-shadow(0 0 1px rgba(196, 22, 28, .6));
+}
+.fx-stamp.no span { color: #7f1d1d; border-color: #7f1d1d; }
+.fx-stamp.go span { animation: stamp-down .3s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+@keyframes stamp-down { to { opacity: .9; transform: rotate(-13deg) scale(1); } }
+.fx-shake { animation: card-shake .35s ease; }
+@keyframes card-shake { 20% { translate: -3px 2px; } 40% { translate: 3px -2px; } 60% { translate: -2px 1px; } 80% { translate: 1px 0; } }
+
+/* Уборка в галерее пазлов: карточка рассыпается на кусочки и собирается обратно */
+.fx-puzzle { background: #0d0a16; }
+.fx-puzzle div {
+  position: absolute; background-repeat: no-repeat; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .45), inset 0 0 0 2px rgba(255, 255, 255, .08), 0 6px 14px rgba(0, 0, 0, .5);
+  animation: puzzle-fly 1.9s cubic-bezier(.5, 0, .3, 1) var(--d) both;
+}
+@keyframes puzzle-fly {
+  0% { transform: none; }
+  40%, 55% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.86); }
+  100% { transform: none; }
+}
+
+/* Музыкальное лото: ноты разлетаются вверх */
+.fx-notes span {
+  position: absolute; bottom: 0; font-weight: 900; line-height: 1; opacity: 0;
+  text-shadow: 0 0 12px currentColor; animation: note-up var(--t) ease-out var(--d) forwards;
+}
+@keyframes note-up {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--sway), -150%) rotate(var(--rot)); }
+}
+
+/* GameShelf: часы набегают, выскакивает плашка достижения */
+.fx-shelf .pill {
+  position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; align-items: center; padding: 6px 11px;
+  border-radius: 999px; background: rgba(10, 8, 20, .85); border: 1px solid rgba(52, 211, 153, .6); color: #a7f3d0;
+  font: 700 13px/1 var(--font); animation: fx-pop .3s ease both;
+}
+.fx-shelf .ach {
+  position: absolute; right: 10px; top: 10px; display: flex; gap: 10px; align-items: center; max-width: 82%;
+  padding: 9px 12px 9px 9px; border-radius: 12px; border: 2px solid transparent;
+  background: linear-gradient(135deg, #221a3a, #150f28) padding-box, linear-gradient(90deg, #fbbf24, #d946ef) border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .6); animation: fx-slide .45s cubic-bezier(.2, .9, .2, 1.1) .5s both;
+}
+.fx-shelf .ach svg { width: 30px; height: 30px; color: #fbbf24; flex-shrink: 0; }
+.fx-shelf .ach small { display: block; color: #fbbf24; font: 800 9px/1.2 var(--font); letter-spacing: .1em; text-transform: uppercase; }
+.fx-shelf .ach strong { display: block; color: #fff; font: 700 13px/1.25 var(--font); }
+@keyframes fx-pop { from { opacity: 0; transform: scale(.6); } }
+@keyframes fx-slide { from { opacity: 0; transform: translateX(120%); } }
