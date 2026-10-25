@@ -289,8 +289,8 @@
   }
 
   // ---------------------------------------------------------------- эффекты карточек проектов
-  // У каждого проекта свой эффект о сути игры. Играет один раз за посещение сайта (sessionStorage),
-  // чтобы не надоедать: с мышью — при наведении, на телефоне — когда карточка появилась на экране.
+  // У каждого проекта свой эффект о сути игры. Играет каждый раз: с мышью — при наведении,
+  // на телефоне — когда карточка появилась на экране. Пока эффект идёт, новый на той же карточке не начинается.
   const make = (tag, className, html = "") => {
     const node = document.createElement(tag);
     node.className = className;
@@ -559,27 +559,14 @@
   };
 
   if (!reduce) {
-    const played = new Set();
-    const firstTime = (slug) => {  // true — эффект ещё не играл в это посещение (и теперь отмечен)
-      if (played.has(slug)) return false;
-      played.add(slug);
-      try {
-        if (sessionStorage.getItem(`dgs-fx-${slug}`)) return false;
-        sessionStorage.setItem(`dgs-fx-${slug}`, "1");
-      } catch { /* без sessionStorage — хотя бы раз на этой странице */ }
-      return true;
-    };
     // На телефоне — когда карточка уже проявилась и человек на ней задержался: не меньше 60% видно 0,9 с подряд.
-    // При быстрой прокрутке эффекты не «сгорают» за экраном
+    // При быстрой прокрутке эффекты не играют за экраном; снова — когда карточка ушла и вернулась
     const timers = new Map();
     const watch = "IntersectionObserver" in window && !mouse
       ? new IntersectionObserver((entries) => entries.forEach((entry) => {
         clearTimeout(timers.get(entry.target));
         if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-          timers.set(entry.target, later(900, () => {
-            watch.unobserve(entry.target);
-            entry.target.dispatchEvent(new Event("fx-play"));
-          }));
+          timers.set(entry.target, later(900, () => entry.target.dispatchEvent(new Event("fx-play"))));
         }
       }), { threshold: [0, 0.6] })
       : null;
@@ -587,7 +574,11 @@
       const slug = card.dataset.fx;
       const box = card.querySelector(".thumb, .art");
       if (!FX[slug] || !box) return;
-      const play = () => { if (firstTime(slug)) FX[slug](box, card); };
+      // Все эффекты рисуют в слое .fx-layer и убирают его в конце: слой на месте (или карточка ещё «занята») —
+      // эффект идёт. Иначе таймер прошлого раза снял бы fx-busy посреди нового, и картинка дёрнулась бы
+      const play = () => {
+        if (!box.querySelector(".fx-layer") && !card.classList.contains("fx-busy")) FX[slug](box, card);
+      };
       card.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") play(); });
       card.addEventListener("fx-play", play);
       if (watch) watch.observe(card);
@@ -1087,21 +1078,23 @@
     link.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") markSocial(kind); });
   }));
   if (store.get("dgs-social")) markSocial();
-  const originOf = (link) => {  // центр значка и края самой ссылки — у них появляются облачка и квадратики
-    const r = (link.querySelector("svg") || link).getBoundingClientRect();
+  const originOf = (link) => {  // центр и края самой ссылки (карточки) — эффект ровно над ней, а не над значком сбоку
     const box = link.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2, top: box.top, bottom: box.bottom };
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2, top: box.top, bottom: box.bottom, width: box.width };
   };
   const SOCIAL_FX = {
     discord(link) {  // над ссылкой — окошко чата, сообщения приходят одно за другим
-      const { x, top, bottom } = originOf(link);
+      const { x, top, bottom, width } = originOf(link);
       const lines = ru ? ["го в войс?", "gg", "кто онлайн?", "ещё катку?", "ахаха", "бро, глянь"]
         : ["voice?", "gg", "who's online?", "one more game?", "lol", "bro, look"];
       const pick = [...lines].sort(() => Math.random() - 0.5).slice(0, 4);
       const box = make("div", "chat-fx");
       const below = top < 160;  // ссылка у верхнего края — облачка под ней, иначе уйдут за экран
       if (below) box.classList.add("below");
-      Object.assign(box.style, { left: `${Math.max(110, Math.min(x, innerWidth - 110))}px`,
+      // Окошко шириной с карточку (но не уже 180 px, чтобы влезли фразы): реплики слева и справа — по её краям
+      const column = Math.min(Math.max(width - 24, 180), 280, innerWidth - 24);
+      Object.assign(box.style, { width: `${column}px`,
+        left: `${Math.max(12 + column / 2, Math.min(x, innerWidth - 12 - column / 2))}px`,
         top: `${below ? bottom + 10 : top - 10}px` });
       pick.forEach((text, i) => {
         const bubble = make("span", i % 2 ? "alt" : "", "");
@@ -1112,14 +1105,14 @@
       return [box, 2700];
     },
     itch(link) {  // из лавки вылетают монетки и картриджи, подпрыгивают и падают
-      const { x, y } = originOf(link);
+      const { x, y, bottom } = originOf(link);
       const canvas = make("canvas", "plane-fx");
       const ratio = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = innerWidth * ratio;
       canvas.height = innerHeight * ratio;
       const ctx = canvas.getContext("2d");
       ctx.scale(ratio, ratio);
-      const floor = y + 34;
+      const floor = Math.max(bottom, y + 24);  // подпрыгивают на нижнем крае карточки
       const items = Array.from({ length: 16 }, (_, i) => ({
         x, y, vx: (Math.random() - 0.5) * 7, vy: -5 - Math.random() * 6, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
         coin: i % 3 !== 0, bounced: false,
@@ -1161,7 +1154,7 @@
       const box = make("div", "commits-fx");
       const width = cols * 13 + 15;  // клетки 10 px + промежутки 3 px + поля
       const height = rows * 13 + 15;
-      Object.assign(box.style, { left: `${Math.max(12, Math.min(x - 20, innerWidth - width - 12))}px`,
+      Object.assign(box.style, { left: `${Math.max(12, Math.min(x - width / 2, innerWidth - width - 12))}px`,
         top: `${Math.max(12, top - height - 10)}px` });
       const greens = ["#0e4429", "#006d32", "#26a641", "#39d353", "#39d353"];
       for (let c = 0; c < cols; c += 1) {

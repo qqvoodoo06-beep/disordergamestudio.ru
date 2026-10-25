@@ -356,7 +356,7 @@ body.screen-glitch main { animation: screen-glitch .9s steps(1); }
   80% { transform: none; filter: none; }
 }
 
-/* ---------- эффекты карточек проектов (один раз за посещение, site.js) */
+/* ---------- эффекты карточек проектов (при каждом наведении, site.js) */
 .card .thumb { position: relative; }
 .fx-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
 canvas.fx-layer { width: 100%; height: 100%; }
