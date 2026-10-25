@@ -710,31 +710,29 @@
       });
     } catch { /* без звука */ }
   };
-  const toast = (id) => {
+  // Несколько плашек сразу — стопкой в общем контейнере: новая сверху, ушедшая освобождает место. Контейнер есть
+  // с самого начала и объявлен областью оповещений: экранный диктор зачитывает то, что в неё добавили
+  const stack = document.createElement("div");
+  stack.className = "ach-stack";
+  stack.setAttribute("aria-live", "polite");
+  document.body.append(stack);
+  const toast = (id, got) => {  // got — сколько получено на момент выдачи (плашка может показаться позже)
     // Открыто модальное окно (список достижений, скриншот) — всё остальное под его затемнением: покажем после закрытия
     const modal = document.querySelector("dialog[open]");
     if (modal) {
-      modal.addEventListener("close", () => toast(id), { once: true });
+      modal.addEventListener("close", () => toast(id, got), { once: true });
       return;
     }
     const [name, text] = ACHIEVEMENTS[id][ru ? "ru" : "en"];
-    const got = ids.filter((key) => unlocked.has(key) || store.get(`dgs-ach-${key}`)).length;
     const box = document.createElement("div");
     box.className = "ach-toast";
     box.lang = ru ? "ru" : "en";  // на двуязычной 404 текст может быть не на языке страницы
-    box.setAttribute("role", "status");
     box.innerHTML = `<div class="ach-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.5M16 6h3.5v1.5A3 3 0 0 1 16 10.5M12 13v4M8.5 20h7M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div><small>${ru ? "Достижение получено" : "Achievement unlocked"} · ${got}/${ids.length}</small><b></b><span></span></div>`;
     box.querySelector("b").textContent = name;
     box.querySelector("span").textContent = text;
-    // Несколько плашек сразу — стопкой в общем контейнере: новая сверху, ушедшая освобождает место
-    let stack = document.querySelector(".ach-stack");
-    if (!stack) {
-      stack = document.createElement("div");
-      stack.className = "ach-stack";
-      document.body.append(stack);
-    }
     stack.prepend(box);
+    chime();
     requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add("show")));
     setTimeout(() => { box.classList.remove("show"); setTimeout(() => box.remove(), 600); }, 5200);
   };
@@ -743,8 +741,7 @@
     unlocked.add(id);  // и уже полученные раньше — дальше без чтения localStorage
     if (store.get(`dgs-ach-${id}`)) return;
     store.set(`dgs-ach-${id}`, "1");
-    toast(id);
-    chime();
+    toast(id, ids.filter(isUnlocked).length);
     updateAchButton();
   }
   const isUnlocked = (id) => unlocked.has(id) || Boolean(store.get(`dgs-ach-${id}`));
@@ -871,7 +868,7 @@
       const focused = panel.contains(document.activeElement);
       renderPanel();
       panel.scrollTop = scrollTop;
-      if (focused) panel.querySelector(".ach-close").focus();  // innerHTML убрал кнопку, на которой стоял фокус
+      if (focused) panel.querySelector(".ach-close").focus({ preventScroll: true });  // innerHTML убрал кнопку, на которой стоял фокус
     }
   }
   const achButton = document.querySelector(".ach-open");
@@ -894,20 +891,28 @@
     });
   }
 
+  // Вернулись кнопкой «Назад» (страница восстановлена из памяти браузера) или достижение пришло из другой вкладки
+  addEventListener("pageshow", (event) => { if (event.persisted) updateAchButton(); });
+  addEventListener("storage", (event) => { if (!event.key || event.key.startsWith("dgs-ach-")) updateAchButton(); });
+
   // ---------------------------------------------------------------- ночная сова: после 23:00 и до 5 утра
   const hour = new Date().getHours();
   let nightShown = false;
   try { nightShown = Boolean(sessionStorage.getItem("dgs-night")); } catch { nightShown = true; }  // иначе — на каждой странице
   if ((hour >= 23 || hour < 5) && !nightShown) {
+    const owlRegion = document.createElement("div");  // область оповещений для экранного диктора — до появления совы
+    owlRegion.setAttribute("aria-live", "polite");
+    document.body.append(owlRegion);
     whenVisible(2500, () => {
+      // Ушли на другую страницу раньше, а потом вернулись «Назад» — сова там уже была
+      try { if (sessionStorage.getItem("dgs-night")) return; } catch { return; }
       try { sessionStorage.setItem("dgs-night", "1"); } catch { /* не страшно */ }
       const owl = make("div", "night-owl", `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor"/></svg>
         <span>${ru ? "Ещё одну партию — и спать?" : "One more game, then bed?"}</span>
         <button type="button" aria-label="${ru ? "Закрыть" : "Close"}">✕</button>`);
-      owl.setAttribute("role", "status");
       owl.lang = ru ? "ru" : "en";
       owl.querySelector("button").addEventListener("click", () => owl.remove());
-      document.body.append(owl);
+      owlRegion.append(owl);
       requestAnimationFrame(() => requestAnimationFrame(() => owl.classList.add("show")));
       later(12000, () => { owl.classList.remove("show"); later(600, () => owl.remove()); });
       unlock("night");
@@ -1260,6 +1265,7 @@
       place();
       playing = true;
       board.classList.add("playing");  // во время игры свайп по полю не листает страницу
+      document.body.classList.add("snake-on");  // и плашки выезжают сверху, чтобы не закрыть поле
       banner = null;
       clearTimeout(timer);
       timer = setTimeout(step, 130);
@@ -1277,6 +1283,7 @@
       if (dead) {
         playing = false;
         board.classList.remove("playing");
+        document.body.classList.remove("snake-on");
         diedAt = performance.now();
         banner = ru ? `Счёт: ${score}\nЕщё раз — ${again}` : `Score: ${score}\nAgain: ${again}`;
         draw(banner);
@@ -1302,14 +1309,14 @@
     };
     const KEYS = { ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1], ArrowLeft: [-1, 0], KeyA: [-1, 0],
       ArrowRight: [1, 0], KeyD: [1, 0] };
-    const inView = () => {  // поле хотя бы наполовину на экране
+    const inView = () => {  // поле целиком на экране (или занимает весь экран, если выше окна)
       const r = board.getBoundingClientRect();
-      return Math.min(r.bottom, innerHeight) - Math.max(r.top, 0) >= r.height / 2;
+      return Math.min(r.bottom, innerHeight) - Math.max(r.top, 0) >= Math.min(r.height, innerHeight) - 2;
     };
     addEventListener("keydown", (event) => {
       if (event.ctrlKey || event.altKey || event.metaKey) return;  // Alt+← — «назад» в браузере, не трогаем
       if (event.target.closest?.("input, textarea, [contenteditable]")) return;
-      if (!playing && event.target !== board && !inView()) return;  // поле за экраном — клавиши листают страницу
+      if (!playing && !inView()) return;  // поле не на экране — клавиши листают страницу (даже с фокусом на поле)
       if (KEYS[event.code]) {
         event.preventDefault();  // стрелки двигают змейку, а не страницу
         if (playing) turn(...KEYS[event.code]);

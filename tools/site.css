@@ -328,6 +328,7 @@ a .tg-hidden { opacity: 0; transition: opacity .25s ease; }
   position: fixed; right: 20px; bottom: 20px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end;
   gap: 12px; pointer-events: none;
 }
+body.snake-on .ach-stack { top: 20px; bottom: auto; }  /* пока идёт змейка — сверху, поле не закрываем */
 .ach-toast {
   position: relative; display: flex; gap: 14px; align-items: center; pointer-events: none;  /* щелчки — к кнопкам под ней */
   width: min(380px, calc(100vw - 40px)); padding: 14px 18px 14px 14px; border-radius: 16px;
