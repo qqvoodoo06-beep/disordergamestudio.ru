@@ -600,6 +600,10 @@ def main() -> None:
                   {"src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png"}],
     }, ensure_ascii=False, indent=1))
     write(".nojekyll", "")
+    if data.YANDEX_VERIFICATION:  # файл подтверждения для Яндекс.Вебмастера (код тот же, что в метатеге)
+        code = data.YANDEX_VERIFICATION
+        write(f"yandex_{code}.html", '<html>\n    <head>\n        <meta http-equiv="Content-Type" content="text/html; '
+              f'charset=UTF-8">\n    </head>\n    <body>Verification: {code}</body>\n</html>\n')
     domain = re.sub(r"^https?://", "", SITE)
     if not domain.endswith("github.io"):
         write("CNAME", domain + "\n")

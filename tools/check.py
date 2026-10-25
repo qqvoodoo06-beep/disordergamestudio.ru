@@ -72,7 +72,7 @@ def main() -> int:
                 file = file / "index.html"
             if not file.exists():
                 problems.append(f"{rel}: битая ссылка {link}")
-        if rel == "404.html":
+        if rel == "404.html" or rel.startswith(("yandex_", "google")):  # служебные файлы подтверждения
             continue
         if page.h1 != 1:
             problems.append(f"{rel}: h1 — {page.h1} шт.")

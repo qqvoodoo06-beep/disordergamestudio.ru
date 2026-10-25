@@ -7,7 +7,7 @@ itch.io или пути к файлам на диске — tools/media.py ск�
 # Адрес сайта: свой домен (файлы лежат на GitHub Pages). От него строятся canonical, hreflang, sitemap и Open Graph
 SITE_URL = "https://disordergamestudio.ru"
 # Коды подтверждения из Яндекс.Вебмастера и Google Search Console (вставить, когда сайт добавят туда)
-YANDEX_VERIFICATION = ""
+YANDEX_VERIFICATION = "869046569c011d5a"
 GOOGLE_VERIFICATION = ""
 
 STUDIO = {
