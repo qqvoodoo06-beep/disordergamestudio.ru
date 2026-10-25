@@ -56,6 +56,8 @@ T = {
         "lang_name": {"ru": "русский", "en": "английский", "es": "испанский"},
         "footer": "Сделано геймерами для геймеров", "rights": "© {year} Disorder Game Studio",
         "nf_title": "Страница не найдена", "nf_text": "Такой страницы нет. Зато есть наши проекты:",
+        "ach": "Достижения", "snake": "Раз уж вы здесь — сыграйте в змейку", "score": "Счёт",
+        "snake_hint": "Стрелки или WASD, на телефоне — свайпы. Наберите 10 очков.",
     },
     "en": {
         "projects": "Projects", "about": "About", "community": "Community", "home": "Home",
@@ -84,6 +86,8 @@ T = {
         "lang_name": {"ru": "Russian", "en": "English", "es": "Spanish"},
         "footer": "Made by gamers, for gamers", "rights": "© {year} Disorder Game Studio",
         "nf_title": "Page not found", "nf_text": "This page doesn't exist. Our games do, though:",
+        "ach": "Achievements", "snake": "While you’re here, play some snake", "score": "Score",
+        "snake_hint": "Arrow keys or WASD, swipe on a phone. Score 10 points.",
     },
 }
 
@@ -219,6 +223,12 @@ def header(lang: str, here: str) -> str:
 </header>"""
 
 
+# Кнопка списка достижений: без JavaScript скрыта (hidden), site.js показывает её и вписывает счёт
+TROPHY_ICON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.5'
+               'M16 6h3.5v1.5A3 3 0 0 1 16 10.5M12 13v4M8.5 20h7M10 17h4" fill="none" stroke="currentColor" '
+               'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+
+
 def footer(lang: str, here: str) -> str:
     t = T[lang]
     links = " ".join(f'<a href="{esc(l["url"])}" rel="noopener">{esc(l["label"])}</a>' for l in STUDIO["links"])
@@ -230,6 +240,7 @@ def footer(lang: str, here: str) -> str:
     <div><span class="motto">{t['footer']}</span><br>{t['rights'].format(year=date.today().year)}</div>
     <nav aria-label="{t['projects']}">{projects}</nav>
     <nav aria-label="{t['community']}">{links}</nav>
+    <button class="ach-open" type="button" hidden>{TROPHY_ICON}{t['ach']} <b></b></button>
   </div>
 </footer>
 <script src="{rel(here, 'assets/site.js')}?v={CSS_VERSION}" defer></script>
@@ -523,7 +534,7 @@ def not_found_page() -> str:
     """404 отдаётся по любому адресу, поэтому ссылки — от корня сайта."""
     items = "".join(f'<li><a href="/{page_path("ru", p["slug"])}">{esc(p["ru"]["title"])}</a></li>' for p in data.PROJECTS)
     return f"""<!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="ru" data-bilingual><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Страница не найдена · Page not found — Disorder Game Studio</title><meta name="robots" content="noindex">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site.css?v={CSS_VERSION}"></head>
 <body><main class="hero"><div class="wrap">
@@ -533,7 +544,15 @@ def not_found_page() -> str:
 <ul style="list-style:none;padding:0;line-height:2">{items}</ul>
 <p class="lead" lang="en">{T['en']['nf_text']} <a href="/en/">English version →</a></p>
 <div class="buttons"><a class="btn primary" href="/">{T['ru']['home']}</a> <a class="btn" href="/en/" lang="en">{T['en']['home']}</a></div>
-</div></main></body></html>
+<section class="snake-box" aria-labelledby="snake-title" hidden>
+  <h2 id="snake-title">{T['ru']['snake']} <span lang="en">· {T['en']['snake']}</span></h2>
+  <canvas id="snake" tabindex="0" role="img" aria-label="Змейка · Snake"></canvas>
+  <p class="snake-bar"><span>{T['ru']['score']} · <span lang="en">{T['en']['score']}</span>: <b id="snake-score">0</b></span>
+    <span>{T['ru']['snake_hint']} <span lang="en">{T['en']['snake_hint']}</span></span></p>
+</section>
+</div></main>
+<script src="/assets/site.js?v={CSS_VERSION}" defer></script>
+</body></html>
 """
 
 
@@ -606,7 +625,7 @@ def main() -> None:
               f'charset=UTF-8">\n    </head>\n    <body>Verification: {code}</body>\n</html>\n')
     domain = re.sub(r"^https?://", "", SITE)
     if not domain.endswith("github.io"):
-        write("CNAME", domain + "\n")
+        write("CNAME", domain)  # как у самого GitHub — без перевода строки, иначе лишняя правка после каждой сборки
     elif (DOCS / "CNAME").exists():
         (DOCS / "CNAME").unlink()
     pages = len(list(DOCS.rglob("index.html")))

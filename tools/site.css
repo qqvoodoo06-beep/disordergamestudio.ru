@@ -329,7 +329,7 @@ a .tg-hidden { opacity: 0; transition: opacity .25s ease; }
   gap: 12px; pointer-events: none;
 }
 .ach-toast {
-  position: relative; display: flex; gap: 14px; align-items: center; pointer-events: auto;
+  position: relative; display: flex; gap: 14px; align-items: center; pointer-events: none;  /* щелчки — к кнопкам под ней */
   width: min(380px, calc(100vw - 40px)); padding: 14px 18px 14px 14px; border-radius: 16px;
   background: linear-gradient(135deg, #221a3a, #150f28) padding-box,
               linear-gradient(90deg, #fbbf24, #d946ef) border-box;
@@ -447,3 +447,133 @@ canvas.fx-layer { width: 100%; height: 100%; }
 .fx-shelf .hours em { font-style: normal; font-variant-numeric: tabular-nums; }
 /* Логотип прокручен за экран — его «сбой» не пересчитывается впустую */
 .hero-logo svg.idle { animation-play-state: paused; }
+
+/* ---------- пасхалки (site.js) */
+/* Кнопка списка достижений в подвале */
+.ach-open {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border-2); background: var(--surface); color: var(--dim); font: 600 14px/1 var(--font);
+  transition: border-color .2s ease, color .2s ease;
+}
+.ach-open[hidden] { display: none; }
+.ach-open:hover, .ach-open:focus-visible { border-color: #fbbf24; color: #fff; }
+.ach-open svg { width: 18px; height: 18px; color: #fbbf24; }
+.ach-open b { color: #fbbf24; font-variant-numeric: tabular-nums; }
+
+.ach-panel {
+  width: min(560px, calc(100vw - 32px)); max-height: min(720px, calc(100vh - 48px));
+  max-height: min(720px, calc(100dvh - 48px));  /* на телефоне — без учёта панелей браузера */
+  padding: 0; border-radius: 20px; color: var(--text); overflow: auto; overscroll-behavior: contain;
+  background: linear-gradient(160deg, #1d1533, #120d22) padding-box, linear-gradient(90deg, #fbbf24, #d946ef) border-box;
+  border: 2px solid transparent; box-shadow: 0 30px 90px -20px rgba(0, 0, 0, .8);
+}
+.ach-body { padding: 22px 22px 18px; }  /* поля внутри: щелчок по ним не считается щелчком мимо окна */
+.ach-panel::backdrop { background: rgba(6, 4, 12, .72); backdrop-filter: blur(3px); }
+.ach-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ach-head h2 { margin: 0; font-size: 22px; }
+.ach-head h2 small { color: #fbbf24; font-size: 16px; margin-left: 6px; }
+.ach-close {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border-2); background: transparent;
+  color: var(--dim); font-size: 16px; cursor: pointer;
+}
+.ach-close:hover, .ach-close:focus-visible { color: #fff; border-color: var(--violet); }
+.ach-lead { margin: 6px 0 16px; color: var(--muted); font-size: 14px; }
+.ach-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ach-panel li {
+  display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px;
+  background: rgba(255, 255, 255, .03); border: 1px solid var(--border);
+}
+.ach-panel li.open { border-color: rgba(251, 191, 36, .45); background: rgba(251, 191, 36, .06); }
+.ach-ic { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
+  color: var(--muted); background: var(--surface-2); }
+.ach-ic svg { width: 24px; height: 24px; }
+.ach-panel li.open .ach-ic { color: #fbbf24; background: linear-gradient(135deg, rgba(251, 191, 36, .25), rgba(217, 70, 239, .2)); }
+.ach-panel li b { display: block; font-size: 15px; color: #fff; }
+.ach-panel li.locked b { color: var(--muted); letter-spacing: .2em; }
+.ach-panel li small { display: block; font-size: 13px; line-height: 1.4; color: var(--dim); }
+.ach-panel li.locked small { font-style: italic; color: var(--muted); }
+
+/* Ночная сова: после 23:00 */
+.night-owl {
+  position: fixed; left: 20px; bottom: 20px; z-index: 150; display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 40px); padding: 10px 10px 10px 14px; border-radius: 999px; color: var(--text); font-size: 15px;
+  background: rgba(22, 16, 39, .94); border: 1px solid var(--border-2); box-shadow: 0 14px 40px -10px rgba(0, 0, 0, .7);
+  transform: translateY(calc(100% + 40px)); transition: transform .5s cubic-bezier(.2, .9, .2, 1.1);
+}
+.night-owl.show { transform: none; }
+.night-owl svg { width: 22px; height: 22px; color: #fde68a; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(253, 230, 138, .6)); }
+.night-owl button {
+  width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--dim); cursor: pointer;
+}
+.night-owl button:hover, .night-owl button:focus-visible { color: #fff; }
+@media (max-width: 760px) {  /* внизу на узком экране — плашка достижения: сова уходит наверх, под шапку */
+  .night-owl { top: 76px; bottom: auto; transform: translateY(calc(-100% - 100px)); }
+}
+@media (prefers-reduced-motion: reduce) { .night-owl { transition: none; } }
+
+/* Заставка как у DVD-плеера */
+body.saver-on .pixel-fx { z-index: 310; }  /* вспышка в углу — поверх заставки */
+.dvd-saver { position: fixed; inset: 0; z-index: 300; background: #000; cursor: none; animation: dvd-in .8s ease both; }
+@keyframes dvd-in { from { opacity: 0; } }
+.dvd-logo { position: absolute; left: 0; top: 0; width: 240px; will-change: transform; }
+.dvd-logo svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 0 12px currentColor); }
+.dvd-saver.corner .dvd-logo svg { animation: dvd-corner .9s ease; }
+@keyframes dvd-corner { 0%, 40% { filter: drop-shadow(0 0 30px currentColor) brightness(1.8); transform: scale(1.12); } }
+.dvd-saver p {
+  position: absolute; left: 0; right: 0; bottom: 24px; margin: 0; text-align: center;
+  color: rgba(255, 255, 255, .28); font-size: 13px; letter-spacing: .12em;
+}
+
+/* «Полный беспорядок»: слово disorder с клавиатуры */
+.chaos-mode :is(.card, .spotlight, .fact, .social, .btn, main h2, .features li, .side, .gallery figure) {
+  translate: var(--cx, 0) var(--cy, 0) !important; rotate: var(--cr, 0deg);
+  transition: translate .45s cubic-bezier(.3, 1.6, .5, 1), rotate .45s cubic-bezier(.3, 1.6, .5, 1) !important;
+}
+/* Конец хаоса: блоки плавно возвращаются на места */
+.chaos-out :is(.card, .spotlight, .fact, .social, .btn, main h2, .features li, .side, .gallery figure) {
+  transition: translate .6s ease, rotate .6s ease !important;
+}
+.chaos-mode main { animation: chaos-hue 1.4s linear infinite; }
+@keyframes chaos-hue { to { filter: hue-rotate(360deg); } }
+
+/* Discord: окошко чата над ссылкой, сообщения по очереди */
+.chat-fx {
+  position: fixed; z-index: 95; width: 200px; translate: -50% -100%; display: flex; flex-direction: column; gap: 6px;
+  pointer-events: none; animation: chat-out .4s ease 2.2s forwards;
+}
+.chat-fx span {
+  align-self: flex-start; max-width: 100%; white-space: nowrap; opacity: 0; transform: translateY(8px) scale(.85);
+  transform-origin: left bottom; padding: 6px 12px; border-radius: 14px 14px 14px 4px; background: #5865f2; color: #fff;
+  font: 700 13px/1.2 var(--font); box-shadow: 0 8px 20px -6px rgba(88, 101, 242, .8);
+  animation: chat-pop .3s cubic-bezier(.3, 1.5, .5, 1) var(--d) forwards;
+}
+.chat-fx.below { translate: -50% 0; }
+.chat-fx span.alt {
+  align-self: flex-end; transform-origin: right bottom; background: #2b2d31; border: 1px solid #4e5058;
+  border-radius: 14px 14px 4px 14px; box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .8);
+}
+@keyframes chat-pop { to { opacity: 1; transform: none; } }
+@keyframes chat-out { to { opacity: 0; transform: translateY(-10px); } }
+
+/* GitHub: волна зелёных квадратиков, как график коммитов */
+.commits-fx {
+  position: fixed; z-index: 95; display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column;
+  grid-auto-columns: 10px; gap: 3px; padding: 8px; border-radius: 8px; pointer-events: none;
+  background: rgba(13, 17, 23, .92); border: 1px solid #30363d; animation: commits-out .4s ease 2s forwards;
+}
+.commits-fx i { border-radius: 2px; opacity: 0; transform: scale(.2); animation: commit-pop .3s cubic-bezier(.3, 1.6, .5, 1) var(--d) forwards; }
+@keyframes commit-pop { to { opacity: 1; transform: none; } }
+@keyframes commits-out { to { opacity: 0; transform: translateY(-8px); } }
+
+/* Змейка на странице 404 */
+.snake-box { margin: 44px auto 0; max-width: 560px; }
+.snake-box h2 { font-size: 20px; margin: 0 0 12px; }
+.snake-box h2 span { color: var(--muted); font-weight: 600; }
+#snake {  /* content-box: рамка не входит в размер — буфер холста совпадает с видимой областью */
+  display: block; box-sizing: content-box; width: calc(100% - 2px); border-radius: 14px; border: 1px solid var(--border-2); background: #0d0a18;
+  cursor: pointer; touch-action: manipulation; box-shadow: 0 0 40px -12px rgba(139, 92, 246, .5);
+}
+#snake.playing { touch-action: none; }  /* пока не играют, свайп по полю листает страницу */
+.snake-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+.snake-bar b { color: #f0abfc; font-variant-numeric: tabular-nums; }
+#snake:focus-visible { outline: 2px solid var(--violet-light); outline-offset: 3px; }

@@ -1,7 +1,9 @@
 // Интерактив сайта Disorder Game Studio. Всё — украшения поверх готовой страницы: без JavaScript сайт работает
 // так же, а при системной настройке «уменьшить движение» анимации выключаются.
 (() => {
-  const ru = document.documentElement.lang === "ru";
+  // Страница 404 одна на оба языка: там язык надписей — как у браузера посетителя
+  const ru = document.documentElement.hasAttribute("data-bilingual")
+    ? /^ru\b/i.test(navigator.language || "") : document.documentElement.lang === "ru";
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mouse = window.matchMedia("(pointer: fine)").matches;
   const store = {
@@ -635,7 +637,7 @@
         scramble(entry.target);
       }
     }), { threshold: 0.6 });
-    document.querySelectorAll("main h2").forEach((h2) => titles.observe(h2));
+    document.querySelectorAll("main h2").forEach((h2) => { if (!h2.children.length) titles.observe(h2); });
 
     const appear = new IntersectionObserver((entries) => entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -652,19 +654,42 @@
   }
 
   // ---------------------------------------------------------------- секретные достижения (как в GameShelf)
+  // [название, что сделали, подсказка для списка, пока не получено]
   const ACHIEVEMENTS = {
-    konami: { ru: ["Читер!", "Вы ввели код Konami. Уважаем классику."],
-              en: ["Cheater!", "You entered the Konami code. Respect for the classics."] },
-    chaos: { ru: ["Хаос под контролем", "Пять щелчков по логотипу — и всё пошло вразнос."],
-             en: ["Chaos under control", "Five clicks on the logo, and everything fell apart."] },
-    indie: { ru: ["Интерес к инди-студиям", "Вы перешли по карточке проекта, чтобы узнать о нём больше."],
-             en: ["Into indie studios", "You opened a project card to learn more."] },
-    dgs: { ru: ["Интерес именно к DGS!", "Вы посмотрели все проекты Disorder Game Studio."],
-           en: ["Into DGS specifically!", "You checked out every Disorder Game Studio project."] },
-    pixel: { ru: ["Пиксельный художник", "Нарисовали курсором целую картину."],
-             en: ["Pixel artist", "You painted a whole picture with your cursor."] },
-    heart: { ru: ["С любовью", "Самолётик из Telegram нарисовал вам сердечко."],
-             en: ["With love", "The Telegram plane drew you a heart."] },
+    indie: { ru: ["Интерес к инди-студиям", "Вы перешли по карточке проекта, чтобы узнать о нём больше.",
+                  "Нажмите на карточку любого проекта"],
+             en: ["Into indie studios", "You opened a project card to learn more.", "Click any project card"] },
+    dgs: { ru: ["Интерес именно к DGS!", "Вы посмотрели все проекты Disorder Game Studio.",
+                "Посмотрите все проекты студии"],
+           en: ["Into DGS specifically!", "You checked out every Disorder Game Studio project.",
+                "See every project from the studio"] },
+    konami: { ru: ["Читер!", "Вы ввели код Konami. Уважаем классику.", "Вспомните старые добрые коды"],
+              en: ["Cheater!", "You entered the Konami code. Respect for the classics.", "Remember the good old cheat codes"] },
+    chaos: { ru: ["Хаос под контролем", "Пять щелчков по логотипу — и всё пошло вразнос.",
+                  "Логотип не любит, когда в него тыкают"],
+             en: ["Chaos under control", "Five clicks on the logo, and everything fell apart.",
+                  "The logo doesn't like being poked"] },
+    disorder: { ru: ["Полный беспорядок", "Вы набрали название студии — и сайт сошёл с ума.",
+                     "Наберите на клавиатуре название студии"],
+                en: ["Total disorder", "You typed the studio's name and the site went wild.", "Type the studio's name"] },
+    pixel: { ru: ["Пиксельный художник", "Нарисовали курсором целую картину.", "Порисуйте курсором подольше"],
+             en: ["Pixel artist", "You painted a whole picture with your cursor.", "Doodle with your cursor for a while"] },
+    heart: { ru: ["С любовью", "Самолётик из Telegram нарисовал вам сердечко.", "Telegram умеет летать"],
+             en: ["With love", "The Telegram plane drew you a heart.", "Telegram can fly"] },
+    social: { ru: ["Душа компании", "Вы заглянули во все наши соцсети.",
+                     "Наведите мышь на все наши соцсети или откройте их"],
+              en: ["Social butterfly", "You checked out all our socials.", "Hover over or open all our socials"] },
+    corner: { ru: ["Идеальный угол", "Логотип попал точно в угол — как в старых DVD-плеерах.",
+                   "Отойдите от компьютера на минутку"],
+              en: ["Perfect corner", "The logo hit the corner, just like old DVD players.", "Step away from the computer for a minute"] },
+    night: { ru: ["Ночная сова", "Заглянули к нам глубокой ночью. Ещё одну партию — и спать!",
+                  "Загляните к нам поздно ночью"],
+             en: ["Night owl", "You dropped by in the middle of the night. One more game, then bed!",
+                  "Visit us late at night"] },
+    snake: { ru: ["Заблудился, но не растерялся", "Набрали 10 очков в змейке на странице, которой нет.",
+                  "Попробуйте заблудиться на сайте"],
+             en: ["Lost but not lost", "You scored 10 in the snake game on a page that doesn't exist.",
+                  "Try getting lost on the site"] },
   };
   const ids = Object.keys(ACHIEVEMENTS);
   let audio = null;
@@ -686,10 +711,17 @@
     } catch { /* без звука */ }
   };
   const toast = (id) => {
+    // Открыто модальное окно (список достижений, скриншот) — всё остальное под его затемнением: покажем после закрытия
+    const modal = document.querySelector("dialog[open]");
+    if (modal) {
+      modal.addEventListener("close", () => toast(id), { once: true });
+      return;
+    }
     const [name, text] = ACHIEVEMENTS[id][ru ? "ru" : "en"];
     const got = ids.filter((key) => unlocked.has(key) || store.get(`dgs-ach-${key}`)).length;
     const box = document.createElement("div");
     box.className = "ach-toast";
+    box.lang = ru ? "ru" : "en";  // на двуязычной 404 текст может быть не на языке страницы
     box.setAttribute("role", "status");
     box.innerHTML = `<div class="ach-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.5M16 6h3.5v1.5A3 3 0 0 1 16 10.5M12 13v4M8.5 20h7M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div><small>${ru ? "Достижение получено" : "Achievement unlocked"} · ${got}/${ids.length}</small><b></b><span></span></div>`;
@@ -713,26 +745,42 @@
     store.set(`dgs-ach-${id}`, "1");
     toast(id);
     chime();
+    updateAchButton();
   }
+  const isUnlocked = (id) => unlocked.has(id) || Boolean(store.get(`dgs-ach-${id}`));
   // Плашку показываем, только когда вкладку видно: проект, открытый в фоновой вкладке, поздравит при переходе в неё
+  // Видимость проверяем и когда таймер сработал: вкладку могли свернуть, пока он шёл (ушли в приложение Telegram)
   const whenVisible = (ms, fn) => {
-    if (!document.hidden) {
-      later(ms, fn);
-      return;
-    }
-    const onShow = () => {
-      if (document.hidden) return;
-      document.removeEventListener("visibilitychange", onShow);
-      later(ms, fn);
+    const wait = () => {
+      if (!document.hidden) {
+        later(ms, () => (document.hidden ? wait() : fn()));
+        return;
+      }
+      const onShow = () => {
+        if (document.hidden) return;
+        document.removeEventListener("visibilitychange", onShow);
+        wait();
+      };
+      document.addEventListener("visibilitychange", onShow);
     };
-    document.addEventListener("visibilitychange", onShow);
+    wait();
   };
 
-  const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+  // Коды с клавиатуры. Буква засчитывается и по физической клавише (event.code), и по самому символу (event.key):
+  // на русской раскладке B и A — это «И» и «Ф» («disorder» набирается как «вшыщквук»), а на AZERTY или Dvorak
+  // те же буквы стоят на других клавишах
+  const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight",
+    "KeyB", "KeyA"];
+  const DISORDER = ["KeyD", "KeyI", "KeyS", "KeyO", "KeyR", "KeyD", "KeyE", "KeyR"];
+  const sameKey = (pressed, code) => pressed.code === code
+    || pressed.key === (code.startsWith("Key") ? code.slice(3) : code).toLowerCase();
   let typed = [];
   addEventListener("keydown", (event) => {
-    typed = typed.concat(event.key.length === 1 ? event.key.toLowerCase() : event.key).slice(-KONAMI.length);
-    if (typed.join() === KONAMI.join()) {
+    if (event.target.closest?.("input, textarea, [contenteditable]")) return;
+    typed = typed.concat({ code: event.code, key: (event.key || "").toLowerCase() }).slice(-KONAMI.length);
+    const tail = (code) => typed.length >= code.length
+      && code.every((step, i) => sameKey(typed[typed.length - code.length + i], step));
+    if (tail(KONAMI)) {
       typed = [];
       if (!reduce) {
         document.body.classList.add("screen-glitch");
@@ -740,8 +788,33 @@
         spawn(innerWidth / 2, innerHeight / 2, 120, innerWidth * 0.5, 7, 60);
       }
       unlock("konami");
+    } else if (tail(DISORDER)) {
+      typed = [];
+      chaosMode();
+      unlock("disorder");
     }
   });
+
+  // «Полный беспорядок»: на 5 секунд блоки разъезжаются и наклоняются, цвета плывут, пиксели взрываются
+  let chaosOn = false;
+  function chaosMode() {
+    if (reduce || chaosOn) return;
+    chaosOn = true;
+    const shaken = [...document.querySelectorAll(".card, .spotlight, .fact, .social, .btn, main h2, .features li, .side, .gallery figure")];
+    shaken.forEach((el) => {
+      el.style.setProperty("--cx", `${(Math.random() - 0.5) * 40}px`);
+      el.style.setProperty("--cy", `${(Math.random() - 0.5) * 30}px`);
+      el.style.setProperty("--cr", `${(Math.random() - 0.5) * 14}deg`);
+    });
+    document.body.classList.add("chaos-mode");
+    const bursts = setInterval(() => spawn(Math.random() * innerWidth, Math.random() * innerHeight, 30, 60, 5, 40), 260);
+    later(5000, () => {
+      clearInterval(bursts);
+      document.body.classList.replace("chaos-mode", "chaos-out");
+      shaken.forEach((el) => ["--cx", "--cy", "--cr"].forEach((name) => el.style.removeProperty(name)));
+      later(700, () => { document.body.classList.remove("chaos-out"); chaosOn = false; });
+    });
+  }
 
   // Перешёл по карточке проекта — «Интерес к инди-студиям» (плашка — уже на странице проекта, куда он попал).
   // Отметка ставится при нажатии любой кнопкой (в т. ч. средней и с Ctrl — «открыть в новой вкладке») и живёт час
@@ -768,6 +841,513 @@
     if (total && seen.length >= total) whenVisible(1500, () => unlock("dgs"));
   } else if (pending && !fresh) {
     store.set("dgs-pending", "");  // старая отметка от прерванного перехода
+  }
+
+  // ---------------------------------------------------------------- список достижений (кнопка в подвале)
+  const TROPHY = '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.5M16 6h3.5v1.5A3 3 0 0 1 16 10.5M12 13v4M8.5 20h7M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+  const LOCK = '<path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+  let panel = null;
+  const renderPanel = () => {
+    const got = ids.filter(isUnlocked).length;
+    panel.innerHTML = `<div class="ach-body"><div class="ach-head"><h2>${ru ? "Достижения" : "Achievements"} <small>${got}/${ids.length}</small></h2>
+      <button type="button" class="ach-close" aria-label="${ru ? "Закрыть" : "Close"}">✕</button></div>
+      <p class="ach-lead">${ru ? "Секреты сайта: ищите, пробуйте, тыкайте. Подсказки — у тех, что ещё не открыты."
+        : "Secrets of the site: explore, try, poke around. Locked ones come with a hint."}</p>
+      <ul>${ids.map((id) => {
+        const [name, text, hint] = ACHIEVEMENTS[id][ru ? "ru" : "en"];
+        const open = isUnlocked(id);
+        return `<li class="${open ? "open" : "locked"}"><span class="ach-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${open ? TROPHY : LOCK}</svg></span>
+          <span><b>${open ? name : "???"}</b><small>${open ? text : hint}</small></span></li>`;
+      }).join("")}</ul></div>`;
+    panel.querySelector(".ach-close").addEventListener("click", () => panel.close());
+  };
+  function updateAchButton() {
+    const button = document.querySelector(".ach-open");
+    if (!button || typeof HTMLDialogElement === "undefined") return;
+    button.querySelector("b").textContent = `${ids.filter(isUnlocked).length}/${ids.length}`;
+    button.hidden = false;
+    if (panel && panel.open) {  // окно открыто (прочитали подсказку и сразу попробовали) — обновляем список на месте
+      const { scrollTop } = panel;
+      const focused = panel.contains(document.activeElement);
+      renderPanel();
+      panel.scrollTop = scrollTop;
+      if (focused) panel.querySelector(".ach-close").focus();  // innerHTML убрал кнопку, на которой стоял фокус
+    }
+  }
+  const achButton = document.querySelector(".ach-open");
+  if (achButton && typeof HTMLDialogElement !== "undefined") {
+    panel = document.createElement("dialog");
+    panel.className = "ach-panel";
+    panel.setAttribute("aria-label", ru ? "Достижения" : "Achievements");
+    document.body.append(panel);
+    updateAchButton();
+    achButton.addEventListener("click", () => {
+      renderPanel();
+      panel.showModal();
+    });
+    // Щелчок по затемнению вокруг окна закрывает его. Поля — у внутреннего блока, поэтому щелчок внутри окна
+    // в сам <dialog> не попадает; выделение текста, отпущенное за краем окна, тоже не закрывает
+    let pressedInside = false;
+    panel.addEventListener("pointerdown", (event) => { pressedInside = event.target !== panel; });
+    panel.addEventListener("click", (event) => {
+      if (event.target === panel && !pressedInside) panel.close();
+    });
+  }
+
+  // ---------------------------------------------------------------- ночная сова: после 23:00 и до 5 утра
+  const hour = new Date().getHours();
+  let nightShown = false;
+  try { nightShown = Boolean(sessionStorage.getItem("dgs-night")); } catch { nightShown = true; }  // иначе — на каждой странице
+  if ((hour >= 23 || hour < 5) && !nightShown) {
+    whenVisible(2500, () => {
+      try { sessionStorage.setItem("dgs-night", "1"); } catch { /* не страшно */ }
+      const owl = make("div", "night-owl", `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor"/></svg>
+        <span>${ru ? "Ещё одну партию — и спать?" : "One more game, then bed?"}</span>
+        <button type="button" aria-label="${ru ? "Закрыть" : "Close"}">✕</button>`);
+      owl.setAttribute("role", "status");
+      owl.lang = ru ? "ru" : "en";
+      owl.querySelector("button").addEventListener("click", () => owl.remove());
+      document.body.append(owl);
+      requestAnimationFrame(() => requestAnimationFrame(() => owl.classList.add("show")));
+      later(12000, () => { owl.classList.remove("show"); later(600, () => owl.remove()); });
+      unlock("night");
+    });
+  }
+
+  // ---------------------------------------------------------------- заставка как у DVD-плеера
+  // Через минуту без движения логотип DISORDER отскакивает от краёв экрана и меняет цвет при каждом ударе.
+  // Направление выбрано так, чтобы рано или поздно он попал точно в угол: в «развёрнутом» пространстве
+  // (где отражения от стен — это просто продолжение прямой) угол экрана — это узлы сетки (k·W, m·H)
+  const brandSvg = document.querySelector(".brand svg");
+  if (!reduce && mouse && brandSvg) {
+    const IDLE = 60000;
+    let lastActive = Date.now();
+    let saver = null;
+    let anchor = null;  // где была мышь при последнем настоящем движении
+    const noWheel = (event) => event.preventDefault();
+    const stopSaver = () => {
+      if (!saver) return;
+      removeEventListener("wheel", noWheel, { capture: true });
+      saver.stop = true;
+      saver.node.remove();
+      document.body.classList.remove("saver-on");
+      // С попаданием в угол поздравляем, когда человек вернулся: под заставкой плашку не видно
+      if (saver.corner) whenVisible(400, () => unlock("corner"));
+      saver = null;
+    };
+    const wake = (event) => {
+      if (event.type === "pointermove") {
+        // Браузер может прислать «движение» без движения, когда меняется страница. Сдвиг считаем от точки
+        // последнего настоящего движения, а не от прошлого события, — иначе медленное движение не заметно
+        if (!anchor) {
+          anchor = { x: event.clientX, y: event.clientY };
+          return;
+        }
+        if (Math.hypot(event.clientX - anchor.x, event.clientY - anchor.y) <= 3) return;
+        anchor = { x: event.clientX, y: event.clientY };
+      }
+      // Действие, которым будят заставку, — только чтобы разбудить: не листать страницу, не нажимать кнопку
+      // в фокусе и не открывать ссылку под пальцем (щелчок касания приходит уже после того, как заставка исчезла).
+      // Нажатие мыши не трогаем: его щелчка и так не будет — заставка, на которой нажали, уже удалена
+      if (saver && event.type === "keydown") event.preventDefault();
+      if (saver && event.type === "pointerdown" && event.pointerType !== "mouse") {
+        const eat = (click) => { click.preventDefault(); click.stopPropagation(); };
+        addEventListener("click", eat, { capture: true, once: true });
+        later(1000, () => removeEventListener("click", eat, { capture: true }));
+      }
+      lastActive = Date.now();
+      stopSaver();
+    };
+    ["pointermove", "pointerdown", "keydown", "wheel", "scroll", "touchstart", "resize"].forEach((type) => {
+      addEventListener(type, wake, { passive: type !== "keydown" });  // keydown прокрутку не тормозит
+    });
+    document.addEventListener("visibilitychange", () => { lastActive = Date.now(); stopSaver(); });
+    const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+    const fold = (v, size) => {  // точка развёрнутого пространства → место на экране
+      const p = ((v % (2 * size)) + 2 * size) % (2 * size);
+      return p <= size ? p : 2 * size - p;
+    };
+    const startSaver = () => {
+      const node = make("div", "dvd-saver", `<div class="dvd-logo"></div>
+        <p>${ru ? "Пошевелите мышью, чтобы вернуться" : "Move the mouse to come back"}</p>`);
+      node.setAttribute("aria-hidden", "true");
+      const logo = node.querySelector(".dvd-logo");
+      const copy = brandSvg.cloneNode(true);
+      copy.querySelectorAll("[style]").forEach((el) => el.removeAttribute("style"));  // без «дрожи» букв из шапки
+      logo.append(copy);
+      document.body.append(node);
+      document.body.classList.add("saver-on");
+      addEventListener("wheel", noWheel, { capture: true, passive: false });  // колесо будит, но не листает
+      const lw = logo.offsetWidth;
+      const lh = logo.offsetHeight;
+      const W = node.clientWidth - lw;  // без полосы прокрутки: заставка закрывает только видимую часть окна
+      const H = node.clientHeight - lh;
+      const SPEED = 0.16;  // пикселей за миллисекунду — одинаково на мониторах 60 и 144 Гц
+      const state = { node, stop: false, corner: false };
+      saver = state;
+      let x0 = W * (0.2 + Math.random() * 0.6);
+      let y0 = H * (0.2 + Math.random() * 0.6);
+      let hue = Math.random() * 360;
+      let track;
+      const aim = (fromX, fromY) => {
+        // Новая цель — угол через 2–3 отскока по каждой оси. После угла старт сам стоит в узле сетки (fromX, fromY):
+        // если по пути есть ещё узел (НОД смещений больше 1), логотип молча пролетел бы через угол — такие цели
+        // отбрасываем
+        const side = () => (2 + Math.floor(Math.random() * 2)) * (Math.random() < 0.5 ? -1 : 1);
+        let kx;
+        let ky;
+        do {
+          kx = side();
+          ky = side();
+        } while (fromX !== undefined && gcd(Math.abs(kx - fromX), Math.abs(ky - fromY)) !== 1);
+        const tx = kx * W;
+        const ty = ky * H;
+        const dist = Math.hypot(tx - x0, ty - y0);
+        const ux = (tx - x0) / dist;
+        const uy = (ty - y0) / dist;
+        // Клетку берём чуть впереди по пути: стоя ровно на границе (в углу), логотип ещё не «ударился» о стену
+        track = { X: x0, Y: y0, tx, ty, ux, uy, left: dist,
+          cellX: Math.floor((x0 + ux * 0.5) / W), cellY: Math.floor((y0 + uy * 0.5) / H) };
+      };
+      aim();
+      let last = null;
+      const frame = (now) => {
+        if (state.stop) return;
+        const dt = last === null ? 16 : Math.min(50, now - last);  // после паузы вкладки — без рывка
+        last = now;
+        const stepLength = Math.min(SPEED * dt, track.left);  // последний шаг — ровно до угла, без перелёта
+        track.X += track.ux * stepLength;
+        track.Y += track.uy * stepLength;
+        track.left -= stepLength;
+        const arrived = track.left < 1e-6;
+        if (arrived) {
+          track.X = track.tx;
+          track.Y = track.ty;
+        }
+        // Клетка «развёртки» сменилась — был удар о стену: новый цвет. В самом углу считаем по точке чуть раньше,
+        // иначе ровно на границе клетка «перескочит» и цвет сменится лишний раз
+        const cellX = Math.floor((arrived ? track.X - track.ux * 0.5 : track.X) / W);
+        const cellY = Math.floor((arrived ? track.Y - track.uy * 0.5 : track.Y) / H);
+        if (cellX !== track.cellX || cellY !== track.cellY) {
+          track.cellX = cellX;
+          track.cellY = cellY;
+          hue = (hue + 60 + Math.random() * 90) % 360;
+        }
+        const x = fold(track.X, W);
+        const y = fold(track.Y, H);
+        logo.style.transform = `translate(${x}px, ${y}px)`;
+        logo.style.color = `hsl(${hue} 90% 66%)`;
+        if (arrived) {  // точно в углу!
+          hue = (hue + 120) % 360;
+          node.classList.add("corner");
+          later(900, () => node.classList.remove("corner"));
+          spawn(x + lw / 2, y + lh / 2, 90, 40, 8, 70);
+          state.corner = true;
+          x0 = x;
+          y0 = y;
+          aim(Math.round(x / W), Math.round(y / H));
+        }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    };
+    setInterval(() => {
+      if (saver || document.hidden || Date.now() - lastActive < IDLE) return;
+      // Не мешаем: открыт список достижений, видео на весь экран или смотрят ролик (а не беззвучную петлю-витрину)
+      const watching = [...document.querySelectorAll("video")]
+        .some((video) => !video.paused && (!video.muted || !video.hasAttribute("data-autoplay")));
+      if (watching || document.fullscreenElement || document.querySelector("dialog[open]")) return;
+      if (innerWidth < 480 || innerHeight < 320) return;  // логотипу негде летать
+      startSaver();
+    }, 5000);
+  }
+
+  // ---------------------------------------------------------------- соцсети: Discord, itch.io, GitHub
+  // Как самолётик Telegram: при наведении — свой маленький эффект. Все четыре увидели — «Душа компании»
+  // На телефоне наведения нет — там засчитывается нажатие на ссылку, а плашка ждёт возвращения на сайт
+  const SOCIALS = [["telegram", 'a[href*="t.me/"]'], ["discord", 'a[href*="discord.gg"]'],
+    ["itch", '.community a[href*="itch.io"], .site-footer a[href*="itch.io"]'],
+    ["github", '.community a[href*="github.com"], .site-footer a[href*="github.com"]']];
+  const socialSeen = new Set();  // и в памяти: при заблокированном localStorage засчитывается хотя бы на этой странице
+  function markSocial(kind) {
+    let stored = [];
+    try { stored = JSON.parse(store.get("dgs-social") || "[]"); } catch { stored = []; }
+    if (kind) socialSeen.add(kind);
+    const seen = new Set([...stored, ...socialSeen]);
+    if (seen.size > stored.length) store.set("dgs-social", JSON.stringify([...seen]));
+    if (!isUnlocked("social") && SOCIALS.every(([k]) => seen.has(k))) whenVisible(800, () => unlock("social"));
+  }
+  SOCIALS.forEach(([kind, selector]) => document.querySelectorAll(selector).forEach((link) => {
+    link.addEventListener("click", () => markSocial(kind));
+    link.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") markSocial(kind); });
+  }));
+  if (store.get("dgs-social")) markSocial();
+  const originOf = (link) => {  // центр значка и края самой ссылки — у них появляются облачка и квадратики
+    const r = (link.querySelector("svg") || link).getBoundingClientRect();
+    const box = link.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, top: box.top, bottom: box.bottom };
+  };
+  const SOCIAL_FX = {
+    discord(link) {  // над ссылкой — окошко чата, сообщения приходят одно за другим
+      const { x, top, bottom } = originOf(link);
+      const lines = ru ? ["го в войс?", "gg", "кто онлайн?", "ещё катку?", "ахаха", "бро, глянь"]
+        : ["voice?", "gg", "who's online?", "one more game?", "lol", "bro, look"];
+      const pick = [...lines].sort(() => Math.random() - 0.5).slice(0, 4);
+      const box = make("div", "chat-fx");
+      const below = top < 160;  // ссылка у верхнего края — облачка под ней, иначе уйдут за экран
+      if (below) box.classList.add("below");
+      Object.assign(box.style, { left: `${Math.max(110, Math.min(x, innerWidth - 110))}px`,
+        top: `${below ? bottom + 10 : top - 10}px` });
+      pick.forEach((text, i) => {
+        const bubble = make("span", i % 2 ? "alt" : "", "");
+        bubble.textContent = text;
+        bubble.style.setProperty("--d", `${i * 320}ms`);
+        box.append(bubble);
+      });
+      return [box, 2700];
+    },
+    itch(link) {  // из лавки вылетают монетки и картриджи, подпрыгивают и падают
+      const { x, y } = originOf(link);
+      const canvas = make("canvas", "plane-fx");
+      const ratio = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = innerWidth * ratio;
+      canvas.height = innerHeight * ratio;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(ratio, ratio);
+      const floor = y + 34;
+      const items = Array.from({ length: 16 }, (_, i) => ({
+        x, y, vx: (Math.random() - 0.5) * 7, vy: -5 - Math.random() * 6, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
+        coin: i % 3 !== 0, bounced: false,
+      }));
+      run(1900, (t) => {
+        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        ctx.globalAlpha = t > 1300 ? Math.max(0, 1 - (t - 1300) / 600) : 1;
+        for (const it of items) {
+          it.vy += 0.35;
+          it.x += it.vx;
+          it.y += it.vy;
+          it.rot += it.vr;
+          if (it.y > floor && it.vy > 0 && !it.bounced) { it.vy *= -0.45; it.vx *= 0.7; it.bounced = true; }
+          ctx.save();
+          ctx.translate(it.x, it.y);
+          ctx.rotate(it.rot);
+          if (it.coin) {  // монетка: сплющивается, будто вращается
+            ctx.scale(Math.abs(Math.cos(it.rot * 2)) * 0.8 + 0.2, 1);
+            ctx.fillStyle = "#fbbf24";
+            ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#b45309"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.stroke();
+          } else {  // картридж
+            ctx.fillStyle = "#fa5c5c";
+            ctx.fillRect(-8, -10, 16, 20);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(-5, -6, 10, 7);
+            ctx.fillStyle = "#7f1d1d";
+            ctx.fillRect(-6, 7, 12, 3);
+          }
+          ctx.restore();
+        }
+      }, () => canvas.remove());
+      return [canvas, 2000];
+    },
+    github(link) {  // волна зелёных квадратиков, как график коммитов
+      const { x, top } = originOf(link);
+      const cols = 14;
+      const rows = 7;
+      const box = make("div", "commits-fx");
+      const width = cols * 13 + 15;  // клетки 10 px + промежутки 3 px + поля
+      const height = rows * 13 + 15;
+      Object.assign(box.style, { left: `${Math.max(12, Math.min(x - 20, innerWidth - width - 12))}px`,
+        top: `${Math.max(12, top - height - 10)}px` });
+      const greens = ["#0e4429", "#006d32", "#26a641", "#39d353", "#39d353"];
+      for (let c = 0; c < cols; c += 1) {
+        for (let r = 0; r < rows; r += 1) {
+          const cell = document.createElement("i");
+          cell.style.background = Math.random() < 0.2 ? "#1d1631" : rand(greens);
+          cell.style.setProperty("--d", `${(c + r) * 28}ms`);
+          box.append(cell);
+        }
+      }
+      return [box, 2400];
+    },
+  };
+  if (!reduce && mouse) {
+    const playing = new Set();  // пока эффект идёт, повторное наведение его не перезапускает
+    SOCIALS.filter(([kind]) => SOCIAL_FX[kind]).forEach(([kind, selector]) => {
+      document.querySelectorAll(selector).forEach((link) => link.addEventListener("pointerenter", (event) => {
+        if (event.pointerType !== "mouse" || playing.has(kind)) return;
+        playing.add(kind);
+        const [node, ms] = SOCIAL_FX[kind](link);
+        node.setAttribute("aria-hidden", "true");
+        document.body.append(node);
+        later(ms, () => { node.remove(); playing.delete(kind); });
+      }));
+    });
+  }
+
+  // ---------------------------------------------------------------- змейка на странице 404
+  const board = document.getElementById("snake");
+  if (board) {
+    board.closest(".snake-box").hidden = false;  // без JavaScript играть нечем — секция скрыта в разметке
+    const ctx = board.getContext("2d");
+    const COLS = 20;
+    const ROWS = 14;
+    const scoreLabel = document.getElementById("snake-score");
+    let cell = 0;
+    let fitted = "";
+    const fit = () => {
+      const ratio = Math.min(2, window.devicePixelRatio || 1);
+      const width = board.clientWidth;  // без рамки (у поля content-box) — буфер совпадает с видимым размером
+      fitted = `${width}x${ratio}`;
+      cell = width / COLS;
+      board.width = Math.round(width * ratio);
+      board.height = Math.round(cell * ROWS * ratio);
+      board.style.height = `${cell * ROWS}px`;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+    let snake;
+    let dir;
+    let queue = [];  // до двух поворотов про запас: быстрое «вверх-влево» между шагами не теряется
+    let food;
+    let score;
+    let playing = false;
+    let diedAt = 0;
+    const again = mouse ? (ru ? "пробел или щелчок" : "space or click") : (ru ? "коснитесь поля" : "tap the board");
+    let banner = mouse ? (ru ? "Змейка DISORDER\nСтрелки или WASD — начать" : "DISORDER snake\nArrows or WASD to start")
+      : (ru ? "Змейка DISORDER\nКоснитесь поля — начать" : "DISORDER snake\nTap the board to start");
+    let timer = null;
+    const place = () => {
+      if (snake.length >= COLS * ROWS) {  // всё поле занято — еде места нет
+        food = [-1, -1];
+        return;
+      }
+      do { food = [Math.floor(Math.random() * COLS), Math.floor(Math.random() * ROWS)]; }
+      while (snake.some(([sx, sy]) => sx === food[0] && sy === food[1]));
+    };
+    const draw = (message) => {
+      ctx.fillStyle = "#0d0a18";
+      ctx.fillRect(0, 0, COLS * cell, ROWS * cell);
+      ctx.strokeStyle = "rgba(139, 92, 246, .08)";
+      for (let i = 1; i < COLS; i += 1) { ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, ROWS * cell); ctx.stroke(); }
+      for (let i = 1; i < ROWS; i += 1) { ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(COLS * cell, i * cell); ctx.stroke(); }
+      if (snake) {
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#d946ef";
+        ctx.fillStyle = "#f0abfc";
+        ctx.fillRect(food[0] * cell + 4, food[1] * cell + 4, cell - 8, cell - 8);
+        snake.forEach(([sx, sy], i) => {
+          const k = i / Math.max(1, snake.length - 1);
+          ctx.shadowColor = ctx.fillStyle = `hsl(${265 - k * 80} 90% ${68 - k * 10}%)`;
+          ctx.fillRect(sx * cell + 2, sy * cell + 2, cell - 4, cell - 4);
+        });
+        ctx.shadowBlur = 0;
+      }
+      if (message) {
+        ctx.fillStyle = "rgba(11, 8, 20, .72)";
+        ctx.fillRect(0, 0, COLS * cell, ROWS * cell);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `700 ${Math.max(14, cell * 0.8)}px "Segoe UI", system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        message.split("\n").forEach((line, i) => ctx.fillText(line, (COLS * cell) / 2, (ROWS * cell) / 2 + (i - 0.3) * cell * 1.3));
+      }
+    };
+    const start = (first) => {  // first — направление клавиши, которой начали
+      const left = first && first[0] === -1;
+      snake = left ? [[13, 7], [14, 7], [15, 7]] : [[6, 7], [5, 7], [4, 7]];  // «влево» — змейка смотрит влево
+      dir = first && first[0] !== 1 && !left ? first : [left ? -1 : 1, 0];
+      queue = [];
+      score = 0;
+      scoreLabel.textContent = "0";
+      place();
+      playing = true;
+      board.classList.add("playing");  // во время игры свайп по полю не листает страницу
+      banner = null;
+      clearTimeout(timer);
+      timer = setTimeout(step, 130);
+      draw();
+    };
+    // Сразу после проигрыша новая игра не начинается: зажатая стрелка или лишний свайп не сотрут счёт
+    const canRestart = () => performance.now() - diedAt > 700;
+    const step = () => {
+      if (queue.length) dir = queue.shift();
+      const head = [snake[0][0] + dir[0], snake[0][1] + dir[1]];
+      const eating = head[0] === food[0] && head[1] === food[1];
+      const body = eating ? snake : snake.slice(0, -1);  // хвост в этот же шаг уходит — в его клетку можно
+      const dead = head[0] < 0 || head[1] < 0 || head[0] >= COLS || head[1] >= ROWS
+        || body.some(([sx, sy]) => sx === head[0] && sy === head[1]);
+      if (dead) {
+        playing = false;
+        board.classList.remove("playing");
+        diedAt = performance.now();
+        banner = ru ? `Счёт: ${score}\nЕщё раз — ${again}` : `Score: ${score}\nAgain: ${again}`;
+        draw(banner);
+        return;
+      }
+      snake.unshift(head);
+      if (eating) {
+        score += 1;
+        scoreLabel.textContent = String(score);
+        if (score >= 10) unlock("snake");
+        place();
+      } else {
+        snake.pop();
+      }
+      draw();
+      timer = setTimeout(step, Math.max(70, 130 - score * 4));  // с каждым очком чуть быстрее
+    };
+    const turn = (dx, dy) => {
+      if (!playing) return;
+      const prev = queue.length ? queue[queue.length - 1] : dir;
+      if ((dx === prev[0] && dy === prev[1]) || (dx === -prev[0] && dy === -prev[1])) return;  // назад в себя нельзя
+      if (queue.length < 2) queue.push([dx, dy]);
+    };
+    const KEYS = { ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1], ArrowLeft: [-1, 0], KeyA: [-1, 0],
+      ArrowRight: [1, 0], KeyD: [1, 0] };
+    const inView = () => {  // поле хотя бы наполовину на экране
+      const r = board.getBoundingClientRect();
+      return Math.min(r.bottom, innerHeight) - Math.max(r.top, 0) >= r.height / 2;
+    };
+    addEventListener("keydown", (event) => {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;  // Alt+← — «назад» в браузере, не трогаем
+      if (event.target.closest?.("input, textarea, [contenteditable]")) return;
+      if (!playing && event.target !== board && !inView()) return;  // поле за экраном — клавиши листают страницу
+      if (KEYS[event.code]) {
+        event.preventDefault();  // стрелки двигают змейку, а не страницу
+        if (playing) turn(...KEYS[event.code]);
+        else if (!event.repeat && canRestart()) start(KEYS[event.code]);
+      } else if ((event.code === "Space" || event.code === "Enter") && [document.body, board].includes(event.target)) {
+        event.preventDefault();  // Enter на ссылке или кнопке по-прежнему переходит по ней
+        if (!playing && !event.repeat && canRestart()) start();
+      }
+    });
+    document.addEventListener("visibilitychange", () => {  // ушли на другую вкладку — змейка ждёт, а не врезается
+      if (!playing) return;
+      clearTimeout(timer);
+      if (!document.hidden) timer = setTimeout(step, 700);
+    });
+    board.addEventListener("click", () => { if (!playing && canRestart()) start(); });
+    let touch = null;  // на телефоне — свайпы по полю
+    board.addEventListener("touchstart", (event) => {  // начинает игру касание (click), а свайпы — только в игре
+      touch = playing ? event.touches[0] : null;
+    }, { passive: true });
+    board.addEventListener("touchmove", (event) => {
+      if (!touch || !playing) return;
+      event.preventDefault();  // пока палец на поле, страница не прокручивается
+      const t2 = event.touches[0];
+      const dx = t2.clientX - touch.clientX;
+      const dy = t2.clientY - touch.clientY;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+      if (Math.abs(dx) > Math.abs(dy)) turn(Math.sign(dx), 0); else turn(0, Math.sign(dy));
+      touch = t2;
+    }, { passive: false });
+    const refit = () => {  // ширина поля или плотность экрана изменились — перерисовать в новом размере
+      if (`${board.clientWidth}x${Math.min(2, window.devicePixelRatio || 1)}` === fitted) return;
+      fit();
+      draw(banner);
+    };
+    fit();
+    draw(banner);
+    if ("ResizeObserver" in window) new ResizeObserver(refit).observe(board);
+    addEventListener("resize", refit);
   }
 
   // ---------------------------------------------------------------- просмотр скриншотов
