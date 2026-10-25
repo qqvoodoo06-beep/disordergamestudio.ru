@@ -4,8 +4,8 @@
 itch.io или пути к файлам на диске — tools/media.py скачивает их и готовит размеры для сайта.
 """
 
-# Адрес сайта: пока GitHub Pages, после покупки домена — свой (canonical, sitemap и Open Graph строятся от него)
-SITE_URL = "https://qqvoodoo06-beep.github.io"
+# Адрес сайта: свой домен (файлы лежат на GitHub Pages). От него строятся canonical, hreflang, sitemap и Open Graph
+SITE_URL = "https://disordergamestudio.ru"
 # Коды подтверждения из Яндекс.Вебмастера и Google Search Console (вставить, когда сайт добавят туда)
 YANDEX_VERIFICATION = ""
 GOOGLE_VERIFICATION = ""
