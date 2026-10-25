@@ -284,7 +284,9 @@ p { margin: 0 0 1em; }
 .motto { color: var(--violet-light); font-weight: 700; }
 
 /* ---------- интерактив (site.js) */
-.pixel-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 90; mix-blend-mode: screen; }
+/* Холсты-квадраты пиксельного следа (место и размер задаёт site.js). Смешивание у каждого своё, без общего
+   слоя-обёртки: обёртка изолировала бы квадраты, и «экран» смешивал бы их с пустотой, а не со страницей. */
+.pixel-fx { position: fixed; pointer-events: none; z-index: 90; mix-blend-mode: screen; }
 .hero-logo .l, .brand .l { transform-box: fill-box; transform-origin: center; }
 /* Буквы разлетаются за рамку рисунка — не обрезаем их (по умолчанию SVG обрезает всё за своей рамкой) */
 .hero-logo svg, .brand svg { overflow: visible; }

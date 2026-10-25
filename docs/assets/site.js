@@ -22,27 +22,48 @@
   }
 
   // ---------------------------------------------------------------- пиксели за курсором
+  // Пиксели рисуются на холстах-квадратах, и каждый кадр перерисовываются только квадраты, где пиксели есть сейчас
+  // или были в прошлом кадре. Один холст на весь экран без видеокарты (в Chrome выключено аппаратное ускорение)
+  // пересобирался целиком каждый кадр: след тормозил и отставал от курсора тем сильнее, чем больше окно.
   const COLORS = ["#8b5cf6", "#d946ef", "#22d3ee", "#c4b5fd", "#a78bfa", "#f0abfc"];
-  const pixels = { canvas: null, ctx: null, list: [], running: false, dpr: 1 };
+  const TILE = 128;
+  const PAD = 8;  // квадрат шире на самый крупный пиксель: каждый пиксель целиком в одном квадрате, швов нет
+  const pixels = { ready: false, tiles: new Map(), list: [], running: false, dpr: 1, dropTimer: 0 };
+  const dropTiles = () => {
+    pixels.tiles.forEach((tile) => tile.canvas.remove());
+    pixels.tiles.clear();
+  };
   const setupPixels = () => {
-    const canvas = document.createElement("canvas");
-    canvas.className = "pixel-fx";
-    canvas.setAttribute("aria-hidden", "true");
-    document.body.append(canvas);
-    pixels.canvas = canvas;
-    pixels.ctx = canvas.getContext("2d");
-    const resize = () => {
-      pixels.dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = innerWidth * pixels.dpr;
-      canvas.height = innerHeight * pixels.dpr;
-    };
-    resize();
-    addEventListener("resize", resize);
+    pixels.ready = true;
+    pixels.dpr = Math.min(2, window.devicePixelRatio || 1);
+    addEventListener("resize", () => {  // поменяли масштаб страницы — холсты пересоздадутся в новой чёткости
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      if (dpr === pixels.dpr) return;
+      pixels.dpr = dpr;
+      dropTiles();
+    });
+  };
+  const tileAt = (i, j) => {
+    const key = (i + 1) * 4096 + j + 1;  // i и j бывают −1: пиксель наполовину за левым или верхним краем
+    let tile = pixels.tiles.get(key);
+    if (!tile) {
+      const { dpr } = pixels;
+      // Край квадрата — точно по пикселю экрана: иначе при масштабе вроде 110 % браузер слегка размывает квадрат
+      const x = Math.floor(i * TILE * dpr) / dpr;
+      const y = Math.floor(j * TILE * dpr) / dpr;
+      const canvas = document.createElement("canvas");
+      canvas.className = "pixel-fx";
+      canvas.setAttribute("aria-hidden", "true");
+      canvas.width = canvas.height = Math.ceil((TILE + PAD) * dpr) + 1;
+      const size = canvas.width / dpr;
+      Object.assign(canvas.style, { left: `${x}px`, top: `${y}px`, width: `${size}px`, height: `${size}px` });
+      document.body.append(canvas);
+      tile = { canvas, ctx: canvas.getContext("2d"), x, y, size, dpr, items: [], dirty: false };
+      pixels.tiles.set(key, tile);
+    }
+    return tile;
   };
   const tick = () => {
-    const { ctx, dpr } = pixels;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
     pixels.list = pixels.list.filter((p) => ++p.life < p.max);
     for (const p of pixels.list) {
       p.x += p.vx;
@@ -51,21 +72,39 @@
       p.vy = p.vy * 0.93 + 0.035;  // чуть оседают вниз
       if (Math.random() < 0.015) p.x += (Math.random() - 0.5) * 18;  // «сбой»: пиксель перескакивает вбок
       const k = 1 - p.life / p.max;
-      ctx.globalAlpha = Math.min(1, k * 1.4);
-      ctx.fillStyle = p.color;
-      const size = Math.max(1, Math.round(p.size * (0.4 + 0.6 * k)));
-      ctx.fillRect(Math.round(p.x / 3) * 3, Math.round(p.y / 3) * 3, size, size);  // сетка 3 px — «пиксельно»
+      p.alpha = Math.min(1, k * 1.4);
+      p.s = Math.max(1, Math.round(p.size * (0.4 + 0.6 * k)));
+      p.gx = Math.round(p.x / 3) * 3;  // сетка 3 px — «пиксельно»
+      p.gy = Math.round(p.y / 3) * 3;
+      if (p.gx + p.s > 0 && p.gy + p.s > 0 && p.gx < innerWidth && p.gy < innerHeight) {
+        tileAt(Math.floor(p.gx / TILE), Math.floor(p.gy / TILE)).items.push(p);
+      }
+    }
+    for (const tile of pixels.tiles.values()) {
+      if (!tile.items.length && !tile.dirty) continue;
+      const { ctx, dpr } = tile;
+      // Рисуем в координатах окна. Задаём каждый раз: при сбое видеодрайвера браузер сбрасывает настройки холста
+      ctx.setTransform(dpr, 0, 0, dpr, -tile.x * dpr, -tile.y * dpr);
+      ctx.clearRect(tile.x, tile.y, tile.size, tile.size);
+      for (const p of tile.items) {
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.gx, p.gy, p.s, p.s);
+      }
+      tile.dirty = tile.items.length > 0;
+      tile.items.length = 0;
     }
     if (pixels.list.length) {
       requestAnimationFrame(tick);
     } else {
       pixels.running = false;
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      // Всё догорело. Пустые холсты ждут следующих пикселей, а если за 8 секунд их нет — убираем из памяти
+      pixels.dropTimer = setTimeout(dropTiles, 8000);
     }
   };
   const spawn = (x, y, count, spread, speed, life = 46, colors = COLORS) => {
     if (reduce) return;
-    if (!pixels.canvas) setupPixels();  // на телефоне холст нужен только эффектам карточек — создаём по требованию
+    if (!pixels.ready) setupPixels();  // на телефоне след не рисуется — слой нужен только эффектам карточек
     for (let i = 0; i < count; i += 1) {
       if (pixels.list.length > 320) pixels.list.shift();
       const angle = Math.random() * Math.PI * 2;
@@ -78,6 +117,7 @@
     }
     if (!pixels.running) {
       pixels.running = true;
+      clearTimeout(pixels.dropTimer);
       requestAnimationFrame(tick);
     }
   };
