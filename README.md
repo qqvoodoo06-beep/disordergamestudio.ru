@@ -18,3 +18,5 @@
 - Адрес сайта задаётся в `SITE_URL` (`content/data.py`): от него строятся canonical, hreflang, sitemap и
   картинки для соцсетей. Для своего домена укажите его там — `build.py` сам создаст файл `CNAME`.
 - Коды подтверждения Яндекс.Вебмастера и Google Search Console — в `YANDEX_VERIFICATION` и `GOOGLE_VERIFICATION`.
+- IndexNow: после публикации (git push и обновления GitHub Pages) `python tools/indexnow.py` отправляет в Яндекс
+  новые, изменённые и удалённые страницы; ключ — `INDEXNOW_KEY`, отправленное записано в `content/indexnow.json`.

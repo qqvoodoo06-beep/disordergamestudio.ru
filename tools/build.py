@@ -623,6 +623,8 @@ def main() -> None:
         code = data.YANDEX_VERIFICATION
         write(f"yandex_{code}.html", '<html>\n    <head>\n        <meta http-equiv="Content-Type" content="text/html; '
               f'charset=UTF-8">\n    </head>\n    <body>Verification: {code}</body>\n</html>\n')
+    if data.INDEXNOW_KEY:  # файл ключа IndexNow: в нём только сам ключ, без перевода строки
+        write(f"{data.INDEXNOW_KEY}.txt", data.INDEXNOW_KEY)
     domain = re.sub(r"^https?://", "", SITE)
     if not domain.endswith("github.io"):
         write("CNAME", domain)  # как у самого GitHub — без перевода строки, иначе лишняя правка после каждой сборки

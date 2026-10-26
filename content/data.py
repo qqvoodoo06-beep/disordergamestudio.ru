@@ -9,6 +9,9 @@ SITE_URL = "https://disordergamestudio.ru"
 # Коды подтверждения из Яндекс.Вебмастера и Google Search Console (вставить, когда сайт добавят туда)
 YANDEX_VERIFICATION = "869046569c011d5a"
 GOOGLE_VERIFICATION = ""
+# Ключ IndexNow: build.py кладёт его в корень сайта файлом <ключ>.txt, tools/indexnow.py отправляет с ним
+# новые и изменённые страницы в Яндекс. Ключ не секретный — поисковик сам скачивает этот файл для проверки
+INDEXNOW_KEY = "46bb65e3888661ee18cdb21514bebac3"
 
 STUDIO = {
     "name": "Disorder Game Studio",
