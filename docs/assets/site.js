@@ -231,6 +231,48 @@
     });
   }
 
+  // ---------------------------------------------------------------- слой для эффектов наведения на соцсети
+  // Самолётик, чат и остальные рисуются в слое размером с экран, и слой привязан к своей ссылке. Если ссылка едет
+  // вместе со страницей, слой стоит в координатах страницы — при прокрутке браузер двигает их вместе, без отставания;
+  // если она в липкой или закреплённой панели — в координатах экрана. Внутри слоя координаты те же, что у экрана
+  // в момент наведения. Остальные сдвиги ссылки (липкая панель доехала до края, выше догрузилась картинка) слой
+  // догоняет каждый кадр. onScreen — слой просто во весь экран, а за ссылкой рисунок двигает сам эффект (монетки itch:
+  // холсту в координатах страницы не хватило бы места — при прокрутке монетки обрезались бы по старому краю экрана)
+  const fxLayer = (link, onScreen = false) => {
+    let pinned = onScreen;
+    for (let el = link; el && el !== document.body && !pinned; el = el.parentElement) {
+      if (/^(fixed|sticky)$/.test(getComputedStyle(el).position)) pinned = true;
+    }
+    const root = document.documentElement;
+    const layer = document.createElement("div");
+    layer.className = pinned ? "hover-fx pinned" : "hover-fx";
+    layer.setAttribute("aria-hidden", "true");
+    // Размер — экран на момент наведения, в пикселях: если окно потом вырастет, слой не вылезет за конец страницы
+    Object.assign(layer.style, { width: `${root.clientWidth}px`, height: `${root.clientHeight}px` });
+    // Слой не ниже конца страницы (Safari на «пружине» прокручивает дальше конца) — разницу добираем сдвигом
+    const top = pinned ? 0 : Math.max(0, Math.min(scrollY, root.scrollHeight - root.clientHeight));
+    const lift = pinned ? 0 : scrollY - top;
+    if (!pinned) Object.assign(layer.style, { left: `${scrollX}px`, top: `${top}px` });
+    let shift = `translate(0px, ${lift}px)`;
+    layer.style.transform = shift;
+    document.body.append(layer);
+    if (onScreen) return layer;
+    const where = () => {
+      const box = link.getBoundingClientRect();
+      return pinned ? [box.left, box.top] : [box.left + scrollX, box.top + scrollY];
+    };
+    const [x0, y0] = where();
+    const follow = () => {
+      if (!layer.isConnected) return;
+      const [x, y] = where();
+      const next = `translate(${x - x0}px, ${y - y0 + lift}px)`;
+      if (next !== shift) layer.style.transform = shift = next;
+      requestAnimationFrame(follow);
+    };
+    requestAnimationFrame(follow);
+    return layer;
+  };
+
   // ---------------------------------------------------------------- самолётик Telegram: петля и сердечко из дыма
   if (!reduce && mouse) {
     const NS = "http://www.w3.org/2000/svg";
@@ -293,7 +335,8 @@
           </g>
           <g class="plane"><path d="M15 0 -11 -9 -6 0 -11 9Z" fill="#fff"/><path d="M15 0 -6 0 -11 9Z" fill="#bfe3ff"/></g>
         </g>`;
-      document.body.append(svg);
+      const layer = fxLayer(link);
+      layer.append(svg);
       const trails = svg.querySelectorAll(".smoke path");
       const plane = svg.querySelector(".plane");
       icon.classList.add("tg-hidden");
@@ -318,7 +361,7 @@
         }
         icon.classList.remove("tg-hidden");
         svg.querySelector(".smoke").classList.add("fade");
-        setTimeout(() => { svg.remove(); flying = false; }, 1500);
+        setTimeout(() => { layer.remove(); flying = false; }, 1500);
         unlock("heart");
       };
       requestAnimationFrame(step);
@@ -1146,19 +1189,23 @@
     },
     itch(link) {  // из лавки вылетают монетки и картриджи, подпрыгивают и падают
       const { x, y, bottom } = originOf(link);
+      const start = link.getBoundingClientRect();
       const canvas = make("canvas", "plane-fx");
       const ratio = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = innerWidth * ratio;
-      canvas.height = innerHeight * ratio;
+      const { clientWidth: w, clientHeight: h } = document.documentElement;  // холст — во весь экран, как его слой
+      canvas.width = w * ratio;
+      canvas.height = h * ratio;
       const ctx = canvas.getContext("2d");
-      ctx.scale(ratio, ratio);
       const floor = Math.max(bottom, y + 24);  // подпрыгивают на нижнем крае карточки
       const items = Array.from({ length: 16 }, (_, i) => ({
         x, y, vx: (Math.random() - 0.5) * 7, vy: -5 - Math.random() * 6, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
         coin: i % 3 !== 0, bounced: false,
       }));
       run(1900, (t) => {
-        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        const now = link.getBoundingClientRect();  // холст стоит на экране, а монетки едут за карточкой
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        ctx.translate(now.left - start.left, now.top - start.top);
         ctx.globalAlpha = t > 1300 ? Math.max(0, 1 - (t - 1300) / 600) : 1;
         for (const it of items) {
           it.vy += 0.35;
@@ -1215,9 +1262,9 @@
         if (event.pointerType !== "mouse" || playing.has(kind)) return;
         playing.add(kind);
         const [node, ms] = SOCIAL_FX[kind](link);
-        node.setAttribute("aria-hidden", "true");
-        document.body.append(node);
-        later(ms, () => { node.remove(); playing.delete(kind); });
+        const layer = fxLayer(link, kind === "itch");  // монетки itch сами едут за ссылкой по холсту во весь экран
+        layer.append(node);
+        later(ms, () => { layer.remove(); playing.delete(kind); });
       }));
     });
   }
