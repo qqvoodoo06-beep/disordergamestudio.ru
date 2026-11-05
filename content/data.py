@@ -296,7 +296,7 @@ PROJECTS = [
         "engine": "Python, PySide6 (Qt)",
         "price": "free",
         "languages": ["ru", "en"],
-        "version": "0.3.1",
+        "version": "0.3.2",
         "ru": {
             "title": "GameShelf",
             "short_title": "GameShelf",
@@ -306,7 +306,7 @@ PROJECTS = [
             "seo_description": "GameShelf — бесплатный трекер игр для Windows: библиотека со статусами, "
                                "автоматический учёт времени, статистика и достижения Steam с оверлеем в игре.",
             "genre": "Трекер игр, программа для геймеров",
-            "status": "Вышла · версия 0.3.1",
+            "status": "Вышла · версия 0.3.2",
             "description": [
                 "GameShelf собирает все ваши игры в одну библиотеку и честно считает, сколько вы в них играете. "
                 "Статусы «Играю», «В планах», «Пройдено», «Отложено» и «Брошено», оценка, часы и заметки к каждой "
@@ -341,7 +341,7 @@ PROJECTS = [
             "seo_description": "GameShelf is a free, open-source game tracker for Windows: a library with "
                                "statuses, automatic playtime tracking, stats and achievement popups over your games.",
             "genre": "Game tracker, utility for gamers",
-            "status": "Released · v0.3.1",
+            "status": "Released · v0.3.2",
             "description": [
                 "GameShelf gathers all your games in one library and keeps an honest count of how long you play. Statuses "
                 "(Playing, Planned, Completed, On hold, Dropped), a rating, hours and notes for every game. Search "
